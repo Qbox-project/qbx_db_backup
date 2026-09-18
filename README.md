@@ -64,6 +64,15 @@ set qbx_db_backup_s3_secret "your-secret-access-key"
 
 See [docs/S3_EXAMPLES.md](docs/S3_EXAMPLES.md) for configuration examples for **Cloudflare R2**, **AWS S3**, **Wasabi**, **Backblaze B2**, **MinIO**, and **DigitalOcean Spaces**.
 
+Backups over 100 MiB are sent as a multipart upload, so there is no 5 GB single-request limit. The
+access key needs permission to put, list and delete objects in the bucket, and to abort multipart
+uploads.
+
+If a dashboard token is also set, the dashboard stays the primary destination. When a destination
+cannot be reached the backup is not lost: a failed dashboard upload falls back to S3 (when
+configured) and a failed S3 upload falls back to the local folder, with a warning in the console
+each time. A failed database dump does not fall back, because it would fail the same way everywhere.
+
 ## Configuration
 
 Everything has a working default. The resource reads the database credentials from the
