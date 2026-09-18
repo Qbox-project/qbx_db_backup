@@ -8,6 +8,7 @@ import {
 import { once } from "node:events";
 import { readdirSync } from "node:fs";
 import { chmod } from "node:fs/promises";
+import { constants, setPriority } from "node:os";
 import path from "node:path";
 import type { Readable } from "node:stream";
 import type { ConnectionTarget } from "./connection-string";
@@ -238,6 +239,8 @@ export function runDump(
     },
   );
 
+  child.once("spawn", () => yieldCpuToServer(child.pid));
+
   let stderr = "";
   child.stderr.on("data", (chunk) => {
     stderr += String(chunk);
@@ -284,6 +287,13 @@ function remember(
 async function makeExecutable(target: string): Promise<void> {
   if (process.platform !== "linux") return;
   await chmod(target, 0o755).catch(() => undefined);
+}
+
+function yieldCpuToServer(pid: number | undefined): void {
+  if (pid === undefined) return;
+  try {
+    setPriority(pid, constants.priority.PRIORITY_BELOW_NORMAL);
+  } catch {}
 }
 
 function spawnChecked(
