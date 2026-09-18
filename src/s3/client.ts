@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import type { Readable } from "node:stream";
-import { sha256Hex, signS3Request } from "./signer";
+import { sha256Hex, signS3Request, uriEncode } from "./signer";
 import type {
   S3ClientOptions,
   S3DeleteResult,
@@ -60,7 +60,7 @@ export class S3Client {
 
   public buildUrl(key = "", query?: Record<string, string>): URL {
     let baseUrl: string;
-    const cleanKey = key.replace(/^\/+/, "");
+    const cleanKey = uriEncode(key.replace(/^\/+/, ""), false);
 
     if (this.endpoint) {
       const ep = this.endpoint.replace(/\/+$/, "");

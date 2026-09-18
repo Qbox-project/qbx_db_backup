@@ -13,25 +13,16 @@ export type SignOptions = {
   now?: Date;
 };
 
+const UNRESERVED = /[A-Za-z0-9_\-~.]/;
+
 export function uriEncode(input: string, encodeSlash = false): string {
   let result = "";
-  for (let i = 0; i < input.length; i += 1) {
-    const char = input[i]!;
-    if (
-      (char >= "A" && char <= "Z") ||
-      (char >= "a" && char <= "z") ||
-      (char >= "0" && char <= "9") ||
-      char === "_" ||
-      char === "-" ||
-      char === "~" ||
-      char === "."
-    ) {
+  for (const byte of Buffer.from(input, "utf8")) {
+    const char = String.fromCharCode(byte);
+    if (UNRESERVED.test(char) || (char === "/" && !encodeSlash)) {
       result += char;
-    } else if (char === "/" && !encodeSlash) {
-      result += "/";
     } else {
-      const hex = char.charCodeAt(0).toString(16).toUpperCase();
-      result += hex.length < 2 ? `%0${hex}` : `%${hex}`;
+      result += `%${byte.toString(16).toUpperCase().padStart(2, "0")}`;
     }
   }
   return result;
@@ -98,8 +89,8 @@ export function signS3Request(options: SignOptions): S3SignedRequest {
   const signedHeaders = headerKeys.join(";");
 
   // Build canonical URI
-  const rawPath = targetUrl.pathname || "/";
-  const canonicalUri = uriEncode(rawPath, false);
+  // URL.pathname is already percent-encoded; encoding it again would break the signature.
+  const canonicalUri = uriEncode(decodeURIComponent(targetUrl.pathname || "/"), false);
 
   // Build canonical query string
   const queryEntries: [string, string][] = [];

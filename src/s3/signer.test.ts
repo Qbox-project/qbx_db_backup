@@ -73,4 +73,58 @@ describe("AWS SigV4 Signer", () => {
     );
     expect(signed.headers.authorization).toMatch(/Signature=[a-f0-9]{64}/);
   });
+
+  describe("AWS documented SigV4 examples", () => {
+    const aws = {
+      accessKeyId: "AKIAIOSFODNN7EXAMPLE",
+      secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+      region: "us-east-1",
+      now: new Date(Date.UTC(2013, 4, 24, 0, 0, 0)),
+    };
+    const signatureOf = (authorization: string | undefined) =>
+      /Signature=([a-f0-9]{64})/.exec(authorization ?? "")?.[1];
+
+    it("signs GET Object", () => {
+      const signed = signS3Request({
+        ...aws,
+        method: "GET",
+        url: "https://examplebucket.s3.amazonaws.com/test.txt",
+        headers: { range: "bytes=0-9" },
+      });
+      expect(signatureOf(signed.headers.authorization)).toBe(
+        "f0e8bdb87c964420e857bd35b5d6ed310bd44f0170aba48dd91039c6036bdb41",
+      );
+    });
+
+    it("signs a listing with query parameters", () => {
+      const signed = signS3Request({
+        ...aws,
+        method: "GET",
+        url: "https://examplebucket.s3.amazonaws.com/?max-keys=2&prefix=J",
+      });
+      expect(signatureOf(signed.headers.authorization)).toBe(
+        "34b48302e7b5fa45bde8084f4b7868a86f0a534bc59db6670ed5711ef69dc6f7",
+      );
+    });
+
+    it("signs PUT Object with a key that needs percent-encoding", () => {
+      const signed = signS3Request({
+        ...aws,
+        method: "PUT",
+        url: "https://examplebucket.s3.amazonaws.com/test%24file.text",
+        headers: {
+          date: "Fri, 24 May 2013 00:00:00 GMT",
+          "x-amz-storage-class": "REDUCED_REDUNDANCY",
+        },
+        payloadHash: sha256Hex("Welcome to Amazon S3."),
+      });
+      expect(signatureOf(signed.headers.authorization)).toBe(
+        "98ad721746da40c64f1a55b78f14c238d841ea1380cd77a1b5971af0ece108bd",
+      );
+    });
+  });
+
+  it("percent-encodes non-ASCII input as UTF-8", () => {
+    expect(uriEncode("café/☃.zip")).toBe("caf%C3%A9/%E2%98%83.zip");
+  });
 });
