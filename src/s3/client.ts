@@ -34,6 +34,7 @@ const MAX_PARTS = 10_000;
 const PART_ATTEMPTS = 3;
 const MAX_RESPONSE_BYTES = 16 * MIB;
 const BODY_SLICE_BYTES = 64 * 1024;
+const HASH_SLICE_BYTES = MIB;
 
 export class S3Client {
   public readonly bucket: string;
@@ -242,7 +243,7 @@ export class S3Client {
     await this.send("DELETE", key, { uploadId });
   }
 
-  private send(
+  private async send(
     method: string,
     key: string,
     query: Record<string, string>,
@@ -253,7 +254,7 @@ export class S3Client {
       method,
       url: this.buildUrl(key, query),
       headers: body ? { ...headers, "content-length": String(body.length) } : headers,
-      payloadHash: sha256Hex(body ?? ""),
+      payloadHash: body ? await hashInSlices(body) : sha256Hex(""),
       accessKeyId: this.accessKeyId,
       secretAccessKey: this.secretAccessKey,
       region: this.region,
@@ -403,6 +404,16 @@ export class S3Client {
 }
 
 type UploadedPart = { partNumber: number; etag: string };
+
+// Hashing a whole part in one call would stall the game server's main thread.
+async function hashInSlices(buffer: Buffer): Promise<string> {
+  const hash = createHash("sha256");
+  for (let offset = 0; offset < buffer.length; offset += HASH_SLICE_BYTES) {
+    if (offset > 0) await new Promise((resolve) => setImmediate(resolve));
+    hash.update(buffer.subarray(offset, offset + HASH_SLICE_BYTES));
+  }
+  return hash.digest("hex");
+}
 
 function* sliceBuffer(buffer: Buffer): Generator<Buffer> {
   for (let offset = 0; offset < buffer.length; offset += BODY_SLICE_BYTES) {
