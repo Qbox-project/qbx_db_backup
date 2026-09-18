@@ -4,6 +4,7 @@ import {
   type BackupOutcome,
   buildBackupNames,
   cancelRunningBackup,
+  DestinationError,
   isBackupRunning,
   runBackup,
 } from "./backup";
@@ -267,7 +268,9 @@ async function runJob(job: BackupJob): Promise<void> {
 
 async function requestJob(trigger: JobTrigger): Promise<number | null> {
   if (api === null) return null;
-  const created = await api.createJob(trigger);
+  const created = await api.createJob(trigger).catch((failure: unknown) => {
+    throw new DestinationError(failure);
+  });
   if (created.status === "throttled") {
     const allowedAt = parseTimestamp(created.nextAllowedAt);
     info(
@@ -283,7 +286,17 @@ async function requestJob(trigger: JobTrigger): Promise<number | null> {
   return null;
 }
 
-/** Robust priority & fallback pipeline */
+async function runS3WithLocalFallback(): Promise<void> {
+  try {
+    await runS3Backup();
+  } catch (failure) {
+    if (!(failure instanceof DestinationError)) throw failure;
+    warn(`S3 upload failed (${errorMessage(failure)}); falling back to local storage`);
+    await runLocalBackup();
+  }
+}
+
+// Only a destination failure falls back: a failed dump would fail identically on every tier.
 async function executeBackupPipeline(trigger: JobTrigger): Promise<number | null> {
   if (isBackupRunning()) {
     info("a backup is already running");
@@ -293,39 +306,18 @@ async function executeBackupPipeline(trigger: JobTrigger): Promise<number | null
   if (config.mode === "qbx") {
     try {
       return await requestJob(trigger);
-    } catch (qbxFailure) {
-      warn(
-        `Qbox dashboard upload failed (${errorMessage(qbxFailure)}); activating fallback pipeline...`,
-      );
-      if (isS3Configured(config.s3)) {
-        try {
-          await runS3Backup();
-          return null;
-        } catch (s3Failure) {
-          warn(
-            `S3 upload fallback failed (${errorMessage(s3Failure)}); activating local storage fallback...`,
-          );
-          await runLocalBackup();
-          return null;
-        }
-      }
-      await runLocalBackup();
-      return null;
+    } catch (failure) {
+      if (!(failure instanceof DestinationError)) throw failure;
+      const next = s3Client === null ? "local storage" : "S3";
+      warn(`Qbox dashboard upload failed (${errorMessage(failure)}); falling back to ${next}`);
     }
+    if (s3Client === null) await runLocalBackup();
+    else await runS3WithLocalFallback();
+    return null;
   }
 
-  if (config.mode === "s3") {
-    try {
-      await runS3Backup();
-      return null;
-    } catch (s3Failure) {
-      warn(`S3 upload failed (${errorMessage(s3Failure)}); activating local storage fallback...`);
-      await runLocalBackup();
-      return null;
-    }
-  }
-
-  await runLocalBackup();
+  if (config.mode === "s3") await runS3WithLocalFallback();
+  else await runLocalBackup();
   return null;
 }
 

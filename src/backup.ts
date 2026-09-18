@@ -69,6 +69,13 @@ export function buildBackupNames(database: string, date: Date): BackupNames {
   return { zipName: `${stem}.zip`, entryName: `${stem}.sql` };
 }
 
+export class DestinationError extends Error {
+  constructor(cause: unknown) {
+    super(errorMessage(cause), { cause });
+    this.name = "DestinationError";
+  }
+}
+
 export async function runBackup(input: RunBackupInput): Promise<BackupOutcome> {
   if (running) return { busy: true };
   running = true;
@@ -136,7 +143,9 @@ export async function runBackup(input: RunBackupInput): Promise<BackupOutcome> {
         const { warnings } = await Promise.race([dump.done, sink.failed]);
         phase = "upload";
         report();
-        const written = await sink.finish();
+        const written = await sink.finish().catch((failure: unknown) => {
+          throw new DestinationError(failure);
+        });
         return {
           busy: false,
           sizeBytes: written.bytesZip,
