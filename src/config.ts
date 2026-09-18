@@ -6,6 +6,7 @@ export const MIN_POLL_SECONDS = 60;
 export const DEFAULT_POLL_SECONDS = 300;
 export const DEFAULT_INTERVAL_HOURS = 1;
 export const DEFAULT_LOCAL_KEEP = 7;
+export const DEFAULT_MAX_MB_PER_SECOND = 10;
 
 export type ConfigSource = (name: string, fallback: string) => string;
 export type BackupMode = "local" | "qbx" | "s3";
@@ -25,6 +26,7 @@ export type Config = {
   intervalClamped: boolean;
   dumpBin: string;
   zipLevel: number;
+  maxMbPerSecond: number;
   timeoutMinutes: number;
   mode: BackupMode;
   s3: S3Config;
@@ -114,6 +116,13 @@ export function loadConfig(
     intervalClamped: interval !== 0 && interval < 1,
     dumpBin: source("qbx_db_backup_dump_bin", "").trim(),
     zipLevel: clamp(toInt(source("qbx_db_backup_zip_level", "6"), 6), 1, 9),
+    maxMbPerSecond: Math.max(
+      0,
+      toInt(
+        source("qbx_db_backup_max_mb_per_second", String(DEFAULT_MAX_MB_PER_SECOND)),
+        DEFAULT_MAX_MB_PER_SECOND,
+      ),
+    ),
     timeoutMinutes: Math.max(1, toInt(source("qbx_db_backup_timeout_minutes", "120"), 120)),
     mode,
     s3,

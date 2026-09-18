@@ -20,6 +20,7 @@ const FLAG_BY_CONVAR: Record<string, string> = {
   qbx_db_backup_local_dir: "out",
   qbx_db_backup_dump_bin: "dump-bin",
   qbx_db_backup_zip_level: "zip-level",
+  qbx_db_backup_max_mb_per_second: "max-mb-per-second",
   qbx_db_backup_timeout_minutes: "timeout-minutes",
   qbx_db_backup_s3_endpoint: "s3-endpoint",
   qbx_db_backup_s3_bucket: "s3-bucket",

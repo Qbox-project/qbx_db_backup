@@ -1,8 +1,8 @@
-import { PassThrough } from "node:stream";
 import type { Config } from "./config";
 import { parseConnectionString } from "./connection-string";
 import { type AttemptState, type DumpBinary, detectDumpBinary, planRetry, runDump } from "./dump";
 import { errorMessage } from "./log";
+import { createThrottle } from "./throttle";
 import type { BackupSink } from "./zip-sink";
 
 export type BackupPhase = "dump" | "upload";
@@ -132,13 +132,13 @@ export async function runBackup(input: RunBackupInput): Promise<BackupOutcome> {
 
       try {
         if (cancelled !== null) throw cancelled;
-        const counted = new PassThrough();
+        const paced = createThrottle(input.config.maxMbPerSecond * 1024 * 1024);
         dump.stdout.on("data", (chunk: Buffer) => {
           bytesSql += chunk.length;
           report();
         });
-        dump.stdout.pipe(counted);
-        sink.append(counted);
+        dump.stdout.pipe(paced);
+        sink.append(paced);
 
         const { warnings } = await Promise.race([dump.done, sink.failed]);
         phase = "upload";

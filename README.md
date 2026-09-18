@@ -95,7 +95,8 @@ Everything has a working default. The resource reads the database credentials fr
 | `qbx_db_backup_s3_prefix` | (empty) | Prefix path inside the bucket (e.g. `backups/`). |
 | `qbx_db_backup_s3_keep` | `0` | Number of backups to keep in the S3 bucket prefix (0 disables count pruning). |
 | `qbx_db_backup_s3_max_age_days` | `0` | Delete S3 backups older than this many days (0 disables age pruning). |
-| `qbx_db_backup_zip_level` | `6` | Compression level, 1 (fastest) to 9 (smallest). |
+| `qbx_db_backup_zip_level` | `6` | Compression level, 1 (fastest) to 9 (smallest). Lower levels use noticeably less CPU for slightly larger zips. |
+| `qbx_db_backup_max_mb_per_second` | `10` | Pace the dump to this many MB of SQL per second so a backup never competes with the game server for CPU. 0 removes the limit. |
 | `qbx_db_backup_timeout_minutes` | `120` | Give up on a backup after this long. |
 | `qbx_db_backup_dump_bin` | (empty) | Path to your own `mariadb-dump` or `mysqldump` instead of the bundled one. |
 
