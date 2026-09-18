@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
+import { createReadStream } from "node:fs";
+import { open } from "node:fs/promises";
 import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
-import type { Readable } from "node:stream";
+import { Readable } from "node:stream";
 import { sha256Hex, signS3Request, uriEncode } from "./signer";
 import type {
   S3ClientOptions,
@@ -25,6 +27,13 @@ export class S3Error extends Error {
 }
 
 const DEFAULT_TIMEOUT_MS = 60_000;
+const MIB = 1024 * 1024;
+const DEFAULT_MULTIPART_THRESHOLD_BYTES = 100 * MIB;
+const DEFAULT_PART_SIZE_BYTES = 32 * MIB;
+const MAX_PARTS = 10_000;
+const PART_ATTEMPTS = 3;
+const MAX_RESPONSE_BYTES = 16 * MIB;
+const BODY_SLICE_BYTES = 64 * 1024;
 
 export class S3Client {
   public readonly bucket: string;
@@ -34,6 +43,8 @@ export class S3Client {
   private readonly accessKeyId: string;
   private readonly secretAccessKey: string;
   private readonly timeoutMs: number;
+  private readonly multipartThresholdBytes: number;
+  private readonly partSizeBytes: number;
 
   constructor(options: S3ClientOptions) {
     if (!options.bucket || options.bucket.trim().length === 0) {
@@ -52,6 +63,9 @@ export class S3Client {
     this.region = options.region?.trim() || "us-east-1";
     this.endpoint = options.endpoint?.trim() || undefined;
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    this.multipartThresholdBytes =
+      options.multipartThresholdBytes ?? DEFAULT_MULTIPART_THRESHOLD_BYTES;
+    this.partSizeBytes = options.partSizeBytes ?? DEFAULT_PART_SIZE_BYTES;
 
     // By default, custom endpoints use path style (e.g. MinIO, R2), while AWS standard uses virtual-hosted
     this.forcePathStyle =
@@ -129,6 +143,122 @@ export class S3Client {
     const response = await this.executeRequest(signed, body);
     const etag = (response.headers.etag as string | undefined)?.replace(/"/g, "") ?? "";
     return { etag };
+  }
+
+  /** A single PUT is capped at 5 GB by S3 and restarts from zero on any network blip. */
+  public async putFile(
+    key: string,
+    filePath: string,
+    sizeBytes: number,
+    payloadSha256: string,
+  ): Promise<S3PutResult> {
+    if (sizeBytes <= this.multipartThresholdBytes) {
+      return this.putObject(key, createReadStream(filePath), sizeBytes, payloadSha256);
+    }
+
+    const partSize = Math.max(this.partSizeBytes, Math.ceil(sizeBytes / MAX_PARTS));
+    const uploadId = await this.createMultipartUpload(key);
+    const file = await open(filePath, "r");
+    try {
+      const parts: UploadedPart[] = [];
+      for (let offset = 0; offset < sizeBytes; offset += partSize) {
+        const length = Math.min(partSize, sizeBytes - offset);
+        const chunk = Buffer.alloc(length);
+        const { bytesRead } = await file.read(chunk, 0, length, offset);
+        if (bytesRead !== length) {
+          throw new Error(`Backup zip changed size during upload (read ${bytesRead} of ${length})`);
+        }
+        const partNumber = parts.length + 1;
+        parts.push({ partNumber, etag: await this.uploadPart(key, uploadId, partNumber, chunk) });
+      }
+      return await this.completeMultipartUpload(key, uploadId, parts);
+    } catch (failure) {
+      await this.abortMultipartUpload(key, uploadId).catch(() => {});
+      throw failure;
+    } finally {
+      await file.close();
+    }
+  }
+
+  private async createMultipartUpload(key: string): Promise<string> {
+    const response = await this.send("POST", key, { uploads: "" }, undefined, {
+      "content-type": "application/zip",
+    });
+    const uploadId = /<UploadId>(.*?)<\/UploadId>/s.exec(response.body)?.[1]?.trim();
+    if (!uploadId) throw new Error("S3 did not return an UploadId for the multipart upload");
+    return unescapeXml(uploadId);
+  }
+
+  private async uploadPart(
+    key: string,
+    uploadId: string,
+    partNumber: number,
+    chunk: Buffer,
+  ): Promise<string> {
+    const query = { partNumber: String(partNumber), uploadId };
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        const response = await this.send("PUT", key, query, chunk);
+        const etag = response.headers.etag;
+        if (typeof etag !== "string" || etag.length === 0) {
+          throw new Error(`S3 did not return an ETag for part ${partNumber}`);
+        }
+        return etag;
+      } catch (failure) {
+        const rejected =
+          failure instanceof S3Error && failure.statusCode >= 400 && failure.statusCode < 500;
+        if (rejected || attempt >= PART_ATTEMPTS) throw failure;
+      }
+    }
+  }
+
+  private async completeMultipartUpload(
+    key: string,
+    uploadId: string,
+    parts: UploadedPart[],
+  ): Promise<S3PutResult> {
+    const partsXml = parts
+      .map(
+        (part) =>
+          `<Part><PartNumber>${part.partNumber}</PartNumber><ETag>${escapeXml(part.etag)}</ETag></Part>`,
+      )
+      .join("");
+    const body = Buffer.from(
+      `<?xml version="1.0" encoding="UTF-8"?><CompleteMultipartUpload>${partsXml}</CompleteMultipartUpload>`,
+      "utf8",
+    );
+    const response = await this.send("POST", key, { uploadId }, body, {
+      "content-type": "application/xml",
+    });
+    // S3 can answer 200 and still report a failure in the body.
+    if (response.body.includes("<Error>")) {
+      throw parseS3ErrorXml(response.body, response.statusCode);
+    }
+    const etag = /<ETag>(.*?)<\/ETag>/s.exec(response.body)?.[1]?.trim() ?? "";
+    return { etag: unescapeXml(etag).replace(/"/g, "") };
+  }
+
+  private async abortMultipartUpload(key: string, uploadId: string): Promise<void> {
+    await this.send("DELETE", key, { uploadId });
+  }
+
+  private send(
+    method: string,
+    key: string,
+    query: Record<string, string>,
+    body?: Buffer,
+    headers: Record<string, string> = {},
+  ) {
+    const signed = signS3Request({
+      method,
+      url: this.buildUrl(key, query),
+      headers: body ? { ...headers, "content-length": String(body.length) } : headers,
+      payloadHash: sha256Hex(body ?? ""),
+      accessKeyId: this.accessKeyId,
+      secretAccessKey: this.secretAccessKey,
+      region: this.region,
+    });
+    return this.executeRequest(signed, body);
   }
 
   public async listObjectsV2(options?: {
@@ -227,9 +357,17 @@ export class S3Client {
         },
         (res) => {
           const chunks: Buffer[] = [];
+          let received = 0;
           res.on("data", (chunk: Buffer) => {
             idle.refresh();
-            if (chunks.length < 1024) chunks.push(chunk);
+            received += chunk.length;
+            if (received > MAX_RESPONSE_BYTES) {
+              const oversized = new Error(`S3 response exceeded ${MAX_RESPONSE_BYTES} bytes`);
+              req.destroy(oversized);
+              fail(oversized);
+              return;
+            }
+            chunks.push(chunk);
           });
           res.on("error", fail);
           res.on("end", () => {
@@ -249,21 +387,47 @@ export class S3Client {
       req.on("error", fail);
 
       if (body) {
-        if (Buffer.isBuffer(body)) {
-          req.end(body);
-        } else {
-          body.on("error", (streamErr) => {
-            req.destroy(streamErr);
-            fail(streamErr);
-          });
-          body.on("data", () => idle.refresh());
-          body.pipe(req);
-        }
+        // Buffers go out in slices so a slow link still shows progress to the idle timer.
+        const source = Buffer.isBuffer(body) ? Readable.from(sliceBuffer(body)) : body;
+        source.on("error", (streamErr) => {
+          req.destroy(streamErr);
+          fail(streamErr);
+        });
+        source.on("data", () => idle.refresh());
+        source.pipe(req);
       } else {
         req.end();
       }
     });
   }
+}
+
+type UploadedPart = { partNumber: number; etag: string };
+
+function* sliceBuffer(buffer: Buffer): Generator<Buffer> {
+  for (let offset = 0; offset < buffer.length; offset += BODY_SLICE_BYTES) {
+    yield buffer.subarray(offset, offset + BODY_SLICE_BYTES);
+  }
+}
+
+const XML_ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+};
+
+export function unescapeXml(str: string): string {
+  return str.replace(/&(?:#x([0-9a-f]+)|#(\d+)|(\w+));/gi, (entity, hex, decimal, name) => {
+    if (hex !== undefined) return String.fromCodePoint(Number.parseInt(hex, 16));
+    if (decimal !== undefined) return String.fromCodePoint(Number.parseInt(decimal, 10));
+    return XML_ENTITIES[name.toLowerCase()] ?? entity;
+  });
+}
+
+function decodeText(raw: string | undefined): string | undefined {
+  return raw === undefined ? undefined : unescapeXml(raw.trim());
 }
 
 export function escapeXml(str: string): string {
@@ -281,7 +445,7 @@ export function parseS3ErrorXml(xml: string, statusCode: number): S3Error {
 
   const code = codeMatch?.[1]?.trim() ?? `HTTP_${statusCode}`;
   const message =
-    messageMatch?.[1]?.trim() ??
+    decodeText(messageMatch?.[1]) ??
     (xml.slice(0, 200).trim() || `Request failed with HTTP status ${statusCode}`);
 
   return new S3Error(code, message, statusCode, xml);
@@ -290,7 +454,9 @@ export function parseS3ErrorXml(xml: string, statusCode: number): S3Error {
 export function parseListObjectsV2Xml(xml: string): S3ListResult {
   const isTruncated =
     /<IsTruncated>(true|false)<\/IsTruncated>/i.exec(xml)?.[1]?.toLowerCase() === "true";
-  const nextToken = /<NextContinuationToken>(.*?)<\/NextContinuationToken>/s.exec(xml)?.[1]?.trim();
+  const nextToken = decodeText(
+    /<NextContinuationToken>(.*?)<\/NextContinuationToken>/s.exec(xml)?.[1],
+  );
 
   const objects: S3ObjectInfo[] = [];
   const contentsRegex = /<Contents>(.*?)<\/Contents>/gs;
@@ -301,7 +467,7 @@ export function parseListObjectsV2Xml(xml: string): S3ListResult {
     if (!match) break;
     const itemXml = match[1] ?? "";
 
-    const key = /<Key>(.*?)<\/Key>/s.exec(itemXml)?.[1]?.trim();
+    const key = decodeText(/<Key>(.*?)<\/Key>/s.exec(itemXml)?.[1]);
     const lastModifiedRaw = /<LastModified>(.*?)<\/LastModified>/s.exec(itemXml)?.[1]?.trim();
     const sizeRaw = /<Size>(\d+)<\/Size>/s.exec(itemXml)?.[1]?.trim();
     const etag = (
@@ -336,7 +502,7 @@ export function parseDeleteResultXml(xml: string, fallbackKeys: string[]): S3Del
   while (true) {
     dMatch = deletedRegex.exec(xml);
     if (!dMatch) break;
-    const k = /<Key>(.*?)<\/Key>/s.exec(dMatch[1] ?? "")?.[1]?.trim();
+    const k = decodeText(/<Key>(.*?)<\/Key>/s.exec(dMatch[1] ?? "")?.[1]);
     if (k) deletedKeys.push(k);
   }
 
@@ -346,9 +512,9 @@ export function parseDeleteResultXml(xml: string, fallbackKeys: string[]): S3Del
     eMatch = errorRegex.exec(xml);
     if (!eMatch) break;
     const eXml = eMatch[1] ?? "";
-    const k = /<Key>(.*?)<\/Key>/s.exec(eXml)?.[1]?.trim() ?? "";
+    const k = decodeText(/<Key>(.*?)<\/Key>/s.exec(eXml)?.[1]) ?? "";
     const code = /<Code>(.*?)<\/Code>/s.exec(eXml)?.[1]?.trim() ?? "Unknown";
-    const msg = /<Message>(.*?)<\/Message>/s.exec(eXml)?.[1]?.trim() ?? "";
+    const msg = decodeText(/<Message>(.*?)<\/Message>/s.exec(eXml)?.[1]) ?? "";
     errors.push({ key: k, code, message: msg });
   }
 

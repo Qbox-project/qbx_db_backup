@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createServer, type IncomingHttpHeaders, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { Readable } from "node:stream";
-import { S3Client } from "./client";
+import { parseListObjectsV2Xml, S3Client } from "./client";
 import { sha256Hex } from "./signer";
 
 type MockRequest = {
@@ -248,5 +251,147 @@ describe("S3Client", () => {
       silent.closeAllConnections();
       await new Promise<void>((resolve) => silent.close(() => resolve()));
     }
+  });
+
+  describe("putFile", () => {
+    const content = "0123456789abcdefghijKLMNO";
+    let dir: string;
+    let filePath: string;
+
+    beforeEach(async () => {
+      dir = await mkdtemp(path.join(tmpdir(), "qbx-s3-client-"));
+      filePath = path.join(dir, "backup.zip");
+      await writeFile(filePath, content);
+    });
+
+    afterEach(async () => {
+      await rm(dir, { recursive: true, force: true });
+    });
+
+    const multipartClient = () =>
+      new S3Client({
+        endpoint: `http://127.0.0.1:${mockPort}`,
+        bucket: "test-bucket",
+        accessKeyId: "TESTKEY",
+        secretAccessKey: "TESTSECRET",
+        multipartThresholdBytes: 10,
+        partSizeBytes: 10,
+      });
+
+    it("uses a single PUT at or below the threshold", async () => {
+      const client = new S3Client({
+        endpoint: `http://127.0.0.1:${mockPort}`,
+        bucket: "test-bucket",
+        accessKeyId: "TESTKEY",
+        secretAccessKey: "TESTSECRET",
+      });
+      await client.putFile("small.zip", filePath, content.length, sha256Hex(content));
+      expect(receivedRequests.map((r) => `${r.method} ${r.url}`)).toEqual([
+        "PUT /test-bucket/small.zip",
+      ]);
+      expect(receivedRequests[0]?.body).toBe(content);
+    });
+
+    it("splits a large file into parts and completes the upload", async () => {
+      mockHandler = (req) => {
+        if (req.url.endsWith("?uploads=")) {
+          return { status: 200, body: "<R><UploadId>up&amp;1</UploadId></R>" };
+        }
+        if (req.method === "PUT") {
+          const part = new URL(req.url, "http://x").searchParams.get("partNumber");
+          return { status: 200, headers: { etag: `"etag-${part}"` }, body: "" };
+        }
+        return { status: 200, body: "<R><ETag>&quot;final-3&quot;</ETag></R>" };
+      };
+
+      const result = await multipartClient().putFile(
+        "big.zip",
+        filePath,
+        content.length,
+        sha256Hex(content),
+      );
+
+      expect(result.etag).toBe("final-3");
+      const parts = receivedRequests.filter((r) => r.method === "PUT");
+      expect(parts.map((r) => r.body)).toEqual(["0123456789", "abcdefghij", "KLMNO"]);
+      expect(parts.every((r) => r.url.includes("uploadId=up%261"))).toBe(true);
+      expect(parts[2]?.headers["x-amz-content-sha256"]).toBe(sha256Hex("KLMNO"));
+      const complete = receivedRequests.at(-1);
+      expect(complete?.method).toBe("POST");
+      expect(complete?.body).toContain(
+        "<Part><PartNumber>2</PartNumber><ETag>&quot;etag-2&quot;</ETag></Part>",
+      );
+    });
+
+    it("retries a part after a server error", async () => {
+      let failuresLeft = 1;
+      mockHandler = (req) => {
+        if (req.url.endsWith("?uploads=")) {
+          return { status: 200, body: "<R><UploadId>u1</UploadId></R>" };
+        }
+        if (req.method === "PUT" && failuresLeft > 0) {
+          failuresLeft -= 1;
+          return { status: 503, body: "<Error><Code>SlowDown</Code></Error>" };
+        }
+        if (req.method === "PUT") return { status: 200, headers: { etag: '"e"' }, body: "" };
+        return { status: 200, body: "<R><ETag>done</ETag></R>" };
+      };
+
+      await multipartClient().putFile("big.zip", filePath, content.length, sha256Hex(content));
+      expect(receivedRequests.filter((r) => r.method === "PUT")).toHaveLength(4);
+    });
+
+    it("aborts the upload when a part is rejected", async () => {
+      mockHandler = (req) => {
+        if (req.url.endsWith("?uploads=")) {
+          return { status: 200, body: "<R><UploadId>u1</UploadId></R>" };
+        }
+        if (req.method === "PUT") {
+          return { status: 403, body: "<Error><Code>AccessDenied</Code></Error>" };
+        }
+        return { status: 204, body: "" };
+      };
+
+      await expect(
+        multipartClient().putFile("big.zip", filePath, content.length, sha256Hex(content)),
+      ).rejects.toThrow(/AccessDenied/);
+      expect(receivedRequests.map((r) => r.method)).toEqual(["POST", "PUT", "DELETE"]);
+    });
+
+    it("treats an error body on a 200 completion as a failure", async () => {
+      mockHandler = (req) => {
+        if (req.url.endsWith("?uploads=")) {
+          return { status: 200, body: "<R><UploadId>u1</UploadId></R>" };
+        }
+        if (req.method === "PUT") return { status: 200, headers: { etag: '"e"' }, body: "" };
+        if (req.method === "POST") {
+          return { status: 200, body: "<Error><Code>InternalError</Code></Error>" };
+        }
+        return { status: 204, body: "" };
+      };
+
+      await expect(
+        multipartClient().putFile("big.zip", filePath, content.length, sha256Hex(content)),
+      ).rejects.toThrow(/InternalError/);
+      expect(receivedRequests.at(-1)?.method).toBe("DELETE");
+    });
+  });
+
+  it("decodes XML entities in listed keys", () => {
+    const listed = parseListObjectsV2Xml(
+      "<R><Contents><Key>a &amp; b/db-1.zip</Key><LastModified>2026-09-01T00:00:00Z</LastModified><Size>5</Size></Contents></R>",
+    );
+    expect(listed.objects[0]?.key).toBe("a & b/db-1.zip");
+  });
+
+  it("signs keys that need percent-encoding", async () => {
+    const client = new S3Client({
+      endpoint: `http://127.0.0.1:${mockPort}`,
+      bucket: "test-bucket",
+      accessKeyId: "TESTKEY",
+      secretAccessKey: "TESTSECRET",
+    });
+    await client.putObject("my backups/db #1.zip", Buffer.from("a"), 1, sha256Hex("a"));
+    expect(receivedRequests[0]?.url).toBe("/test-bucket/my%20backups/db%20%231.zip");
   });
 });

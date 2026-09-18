@@ -1,4 +1,3 @@
-import { createReadStream } from "node:fs";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import path from "node:path";
 import {
@@ -41,8 +40,7 @@ export class S3Sink implements BackupSink {
             );
           }
 
-          const fileStream = createReadStream(spoolPath);
-          await opts.client.putObject(opts.s3Key, fileStream, result.bytesZip, result.sha256);
+          await opts.client.putFile(opts.s3Key, spoolPath, result.bytesZip, result.sha256);
 
           const localCopy = await keepLocalCopy(spoolPath, opts.keepLocalPath);
           const s3Location = `s3://${opts.client.bucket}/${opts.s3Key}`;

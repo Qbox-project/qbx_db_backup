@@ -18,6 +18,8 @@ export type S3ClientOptions = {
   secretAccessKey: string;
   forcePathStyle?: boolean;
   timeoutMs?: number;
+  multipartThresholdBytes?: number;
+  partSizeBytes?: number;
 };
 
 export type S3SignedRequest = {
