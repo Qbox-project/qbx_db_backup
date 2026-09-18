@@ -12,7 +12,7 @@ import { detectDumpBinary } from "./dump";
 import { errorMessage } from "./log";
 import { S3Client } from "./s3/client";
 import { S3Sink } from "./s3/sink";
-import { LocalFileSink } from "./zip-sink";
+import { type BackupSink, LocalFileSink } from "./zip-sink";
 
 const FLAG_BY_CONVAR: Record<string, string> = {
   mysql_connection_string: "connection",
@@ -85,7 +85,7 @@ async function commandRun(config: Config): Promise<number> {
   const target = parseConnectionString(config.connectionString);
   const names = buildBackupNames(target.database, new Date());
 
-  let sink = new LocalFileSink(path.resolve(config.localDir, names.zipName));
+  let sink: BackupSink = new LocalFileSink(path.resolve(config.localDir, names.zipName));
 
   if (isS3Configured(config.s3)) {
     const s3Client = new S3Client(config.s3);
@@ -97,7 +97,7 @@ async function commandRun(config: Config): Promise<number> {
       s3Key: key,
       tmpDir: path.resolve(config.localDir, ".tmp"),
       keepLocalPath: config.keepLocal ? path.resolve(config.localDir, names.zipName) : undefined,
-    }) as unknown as LocalFileSink;
+    });
   }
 
   const outcome = await runBackup({ config, sink, entryName: names.entryName });
