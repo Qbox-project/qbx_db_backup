@@ -873,9 +873,9 @@ var require_stream_duplex = __commonJS({
     module2.exports = Duplex;
     var util3 = Object.create(require_util());
     util3.inherits = require_inherits();
-    var Readable2 = require_stream_readable();
+    var Readable3 = require_stream_readable();
     var Writable = require_stream_writable();
-    util3.inherits(Duplex, Readable2);
+    util3.inherits(Duplex, Readable3);
     {
       keys = objectKeys(Writable.prototype);
       for (v = 0; v < keys.length; v++) {
@@ -888,7 +888,7 @@ var require_stream_duplex = __commonJS({
     var v;
     function Duplex(options) {
       if (!(this instanceof Duplex)) return new Duplex(options);
-      Readable2.call(this, options);
+      Readable3.call(this, options);
       Writable.call(this, options);
       if (options && options.readable === false) this.readable = false;
       if (options && options.writable === false) this.writable = false;
@@ -1178,10 +1178,10 @@ var require_stream_readable = __commonJS({
   "node_modules/lazystream/node_modules/readable-stream/lib/_stream_readable.js"(exports2, module2) {
     "use strict";
     var pna = require_process_nextick_args();
-    module2.exports = Readable2;
+    module2.exports = Readable3;
     var isArray = require_isarray();
     var Duplex;
-    Readable2.ReadableState = ReadableState;
+    Readable3.ReadableState = ReadableState;
     var EE = require("events").EventEmitter;
     var EElistenerCount = function(emitter, type) {
       return emitter.listeners(type).length;
@@ -1209,7 +1209,7 @@ var require_stream_readable = __commonJS({
     var BufferList = require_BufferList();
     var destroyImpl = require_destroy();
     var StringDecoder;
-    util3.inherits(Readable2, Stream);
+    util3.inherits(Readable3, Stream);
     var kProxyEvents = ["error", "close", "destroy", "pause", "resume"];
     function prependListener(emitter, event, fn) {
       if (typeof emitter.prependListener === "function") return emitter.prependListener(event, fn);
@@ -1255,9 +1255,9 @@ var require_stream_readable = __commonJS({
         this.encoding = options.encoding;
       }
     }
-    function Readable2(options) {
+    function Readable3(options) {
       Duplex = Duplex || require_stream_duplex();
-      if (!(this instanceof Readable2)) return new Readable2(options);
+      if (!(this instanceof Readable3)) return new Readable3(options);
       this._readableState = new ReadableState(options, this);
       this.readable = true;
       if (options) {
@@ -1266,7 +1266,7 @@ var require_stream_readable = __commonJS({
       }
       Stream.call(this);
     }
-    Object.defineProperty(Readable2.prototype, "destroyed", {
+    Object.defineProperty(Readable3.prototype, "destroyed", {
       get: function() {
         if (this._readableState === void 0) {
           return false;
@@ -1280,13 +1280,13 @@ var require_stream_readable = __commonJS({
         this._readableState.destroyed = value;
       }
     });
-    Readable2.prototype.destroy = destroyImpl.destroy;
-    Readable2.prototype._undestroy = destroyImpl.undestroy;
-    Readable2.prototype._destroy = function(err, cb) {
+    Readable3.prototype.destroy = destroyImpl.destroy;
+    Readable3.prototype._undestroy = destroyImpl.undestroy;
+    Readable3.prototype._destroy = function(err, cb) {
       this.push(null);
       cb(err);
     };
-    Readable2.prototype.push = function(chunk, encoding) {
+    Readable3.prototype.push = function(chunk, encoding) {
       var state = this._readableState;
       var skipChunkCheck;
       if (!state.objectMode) {
@@ -1303,7 +1303,7 @@ var require_stream_readable = __commonJS({
       }
       return readableAddChunk(this, chunk, encoding, false, skipChunkCheck);
     };
-    Readable2.prototype.unshift = function(chunk) {
+    Readable3.prototype.unshift = function(chunk) {
       return readableAddChunk(this, chunk, null, true, false);
     };
     function readableAddChunk(stream, chunk, encoding, addToFront, skipChunkCheck) {
@@ -1363,10 +1363,10 @@ var require_stream_readable = __commonJS({
     function needMoreData(state) {
       return !state.ended && (state.needReadable || state.length < state.highWaterMark || state.length === 0);
     }
-    Readable2.prototype.isPaused = function() {
+    Readable3.prototype.isPaused = function() {
       return this._readableState.flowing === false;
     };
-    Readable2.prototype.setEncoding = function(enc) {
+    Readable3.prototype.setEncoding = function(enc) {
       if (!StringDecoder) StringDecoder = require_string_decoder().StringDecoder;
       this._readableState.decoder = new StringDecoder(enc);
       this._readableState.encoding = enc;
@@ -1402,7 +1402,7 @@ var require_stream_readable = __commonJS({
       }
       return state.length;
     }
-    Readable2.prototype.read = function(n) {
+    Readable3.prototype.read = function(n) {
       debug("read", n);
       n = parseInt(n, 10);
       var state = this._readableState;
@@ -1497,10 +1497,10 @@ var require_stream_readable = __commonJS({
       }
       state.readingMore = false;
     }
-    Readable2.prototype._read = function(n) {
+    Readable3.prototype._read = function(n) {
       this.emit("error", new Error("_read() is not implemented"));
     };
-    Readable2.prototype.pipe = function(dest, pipeOpts) {
+    Readable3.prototype.pipe = function(dest, pipeOpts) {
       var src = this;
       var state = this._readableState;
       switch (state.pipesCount) {
@@ -1605,7 +1605,7 @@ var require_stream_readable = __commonJS({
         }
       };
     }
-    Readable2.prototype.unpipe = function(dest) {
+    Readable3.prototype.unpipe = function(dest) {
       var state = this._readableState;
       var unpipeInfo = { hasUnpiped: false };
       if (state.pipesCount === 0) return this;
@@ -1637,7 +1637,7 @@ var require_stream_readable = __commonJS({
       dest.emit("unpipe", this, unpipeInfo);
       return this;
     };
-    Readable2.prototype.on = function(ev, fn) {
+    Readable3.prototype.on = function(ev, fn) {
       var res = Stream.prototype.on.call(this, ev, fn);
       if (ev === "data") {
         if (this._readableState.flowing !== false) this.resume();
@@ -1655,12 +1655,12 @@ var require_stream_readable = __commonJS({
       }
       return res;
     };
-    Readable2.prototype.addListener = Readable2.prototype.on;
+    Readable3.prototype.addListener = Readable3.prototype.on;
     function nReadingNextTick(self2) {
       debug("readable nexttick read 0");
       self2.read(0);
     }
-    Readable2.prototype.resume = function() {
+    Readable3.prototype.resume = function() {
       var state = this._readableState;
       if (!state.flowing) {
         debug("resume");
@@ -1686,7 +1686,7 @@ var require_stream_readable = __commonJS({
       flow(stream);
       if (state.flowing && !state.reading) stream.read(0);
     }
-    Readable2.prototype.pause = function() {
+    Readable3.prototype.pause = function() {
       debug("call pause flowing=%j", this._readableState.flowing);
       if (false !== this._readableState.flowing) {
         debug("pause");
@@ -1701,7 +1701,7 @@ var require_stream_readable = __commonJS({
       while (state.flowing && stream.read() !== null) {
       }
     }
-    Readable2.prototype.wrap = function(stream) {
+    Readable3.prototype.wrap = function(stream) {
       var _this = this;
       var state = this._readableState;
       var paused = false;
@@ -1745,7 +1745,7 @@ var require_stream_readable = __commonJS({
       };
       return this;
     };
-    Object.defineProperty(Readable2.prototype, "readableHighWaterMark", {
+    Object.defineProperty(Readable3.prototype, "readableHighWaterMark", {
       // making it explicit this property is not enumerable
       // because otherwise some prototype manipulation in
       // userland will fail
@@ -1754,7 +1754,7 @@ var require_stream_readable = __commonJS({
         return this._readableState.highWaterMark;
       }
     });
-    Readable2._fromList = fromList;
+    Readable3._fromList = fromList;
     function fromList(n, state) {
       if (state.length === 0) return null;
       var ret;
@@ -1863,11 +1863,11 @@ var require_stream_readable = __commonJS({
 var require_stream_transform = __commonJS({
   "node_modules/lazystream/node_modules/readable-stream/lib/_stream_transform.js"(exports2, module2) {
     "use strict";
-    module2.exports = Transform7;
+    module2.exports = Transform6;
     var Duplex = require_stream_duplex();
     var util3 = Object.create(require_util());
     util3.inherits = require_inherits();
-    util3.inherits(Transform7, Duplex);
+    util3.inherits(Transform6, Duplex);
     function afterTransform(er, data) {
       var ts = this._transformState;
       ts.transforming = false;
@@ -1886,8 +1886,8 @@ var require_stream_transform = __commonJS({
         this._read(rs.highWaterMark);
       }
     }
-    function Transform7(options) {
-      if (!(this instanceof Transform7)) return new Transform7(options);
+    function Transform6(options) {
+      if (!(this instanceof Transform6)) return new Transform6(options);
       Duplex.call(this, options);
       this._transformState = {
         afterTransform: afterTransform.bind(this),
@@ -1915,14 +1915,14 @@ var require_stream_transform = __commonJS({
         done(this, null, null);
       }
     }
-    Transform7.prototype.push = function(chunk, encoding) {
+    Transform6.prototype.push = function(chunk, encoding) {
       this._transformState.needTransform = false;
       return Duplex.prototype.push.call(this, chunk, encoding);
     };
-    Transform7.prototype._transform = function(chunk, encoding, cb) {
+    Transform6.prototype._transform = function(chunk, encoding, cb) {
       throw new Error("_transform() is not implemented");
     };
-    Transform7.prototype._write = function(chunk, encoding, cb) {
+    Transform6.prototype._write = function(chunk, encoding, cb) {
       var ts = this._transformState;
       ts.writecb = cb;
       ts.writechunk = chunk;
@@ -1932,7 +1932,7 @@ var require_stream_transform = __commonJS({
         if (ts.needTransform || rs.needReadable || rs.length < rs.highWaterMark) this._read(rs.highWaterMark);
       }
     };
-    Transform7.prototype._read = function(n) {
+    Transform6.prototype._read = function(n) {
       var ts = this._transformState;
       if (ts.writechunk !== null && ts.writecb && !ts.transforming) {
         ts.transforming = true;
@@ -1941,7 +1941,7 @@ var require_stream_transform = __commonJS({
         ts.needTransform = true;
       }
     };
-    Transform7.prototype._destroy = function(err, cb) {
+    Transform6.prototype._destroy = function(err, cb) {
       var _this2 = this;
       Duplex.prototype._destroy.call(this, err, function(err2) {
         cb(err2);
@@ -1964,13 +1964,13 @@ var require_stream_passthrough = __commonJS({
   "node_modules/lazystream/node_modules/readable-stream/lib/_stream_passthrough.js"(exports2, module2) {
     "use strict";
     module2.exports = PassThrough4;
-    var Transform7 = require_stream_transform();
+    var Transform6 = require_stream_transform();
     var util3 = Object.create(require_util());
     util3.inherits = require_inherits();
-    util3.inherits(PassThrough4, Transform7);
+    util3.inherits(PassThrough4, Transform6);
     function PassThrough4(options) {
       if (!(this instanceof PassThrough4)) return new PassThrough4(options);
-      Transform7.call(this, options);
+      Transform6.call(this, options);
     }
     PassThrough4.prototype._transform = function(chunk, encoding, cb) {
       cb(null, chunk);
@@ -2016,10 +2016,10 @@ var require_lazystream = __commonJS({
     var util3 = require("util");
     var PassThrough4 = require_passthrough();
     module2.exports = {
-      Readable: Readable2,
+      Readable: Readable3,
       Writable
     };
-    util3.inherits(Readable2, PassThrough4);
+    util3.inherits(Readable3, PassThrough4);
     util3.inherits(Writable, PassThrough4);
     function beforeFirstCall(instance, method, callback) {
       instance[method] = function() {
@@ -2028,9 +2028,9 @@ var require_lazystream = __commonJS({
         return this[method].apply(this, arguments);
       };
     }
-    function Readable2(fn, options) {
-      if (!(this instanceof Readable2))
-        return new Readable2(fn, options);
+    function Readable3(fn, options) {
+      if (!(this instanceof Readable3))
+        return new Readable3(fn, options);
       PassThrough4.call(this, options);
       beforeFirstCall(this, "_read", function() {
         var source = fn.call(this, options);
@@ -6839,10 +6839,10 @@ var require_from = __commonJS({
     var { PromisePrototypeThen, SymbolAsyncIterator, SymbolIterator } = require_primordials();
     var { Buffer: Buffer2 } = require("buffer");
     var { ERR_INVALID_ARG_TYPE, ERR_STREAM_NULL_VALUES } = require_errors().codes;
-    function from(Readable2, iterable, opts) {
+    function from(Readable3, iterable, opts) {
       let iterator;
       if (typeof iterable === "string" || iterable instanceof Buffer2) {
-        return new Readable2({
+        return new Readable3({
           objectMode: true,
           ...opts,
           read() {
@@ -6861,7 +6861,7 @@ var require_from = __commonJS({
       } else {
         throw new ERR_INVALID_ARG_TYPE("iterable", ["Iterable"], iterable);
       }
-      const readable = new Readable2({
+      const readable = new Readable3({
         objectMode: true,
         highWaterMark: 1,
         // TODO(ronag): What options should be allowed?
@@ -6945,8 +6945,8 @@ var require_readable2 = __commonJS({
       SymbolAsyncIterator,
       Symbol: Symbol2
     } = require_primordials();
-    module2.exports = Readable2;
-    Readable2.ReadableState = ReadableState;
+    module2.exports = Readable3;
+    Readable3.ReadableState = ReadableState;
     var { EventEmitter: EE } = require("events");
     var { Stream, prependListener } = require_legacy();
     var { Buffer: Buffer2 } = require("buffer");
@@ -6973,8 +6973,8 @@ var require_readable2 = __commonJS({
     var kPaused = Symbol2("kPaused");
     var { StringDecoder } = require_string_decoder2();
     var from = require_from();
-    ObjectSetPrototypeOf(Readable2.prototype, Stream.prototype);
-    ObjectSetPrototypeOf(Readable2, Stream);
+    ObjectSetPrototypeOf(Readable3.prototype, Stream.prototype);
+    ObjectSetPrototypeOf(Readable3, Stream);
     var nop = () => {
     };
     var { errorOrDestroy } = destroyImpl;
@@ -7069,8 +7069,8 @@ var require_readable2 = __commonJS({
         this.encoding = options.encoding;
       }
     }
-    function Readable2(options) {
-      if (!(this instanceof Readable2)) return new Readable2(options);
+    function Readable3(options) {
+      if (!(this instanceof Readable3)) return new Readable3(options);
       const isDuplex = this instanceof require_duplex();
       this._readableState = new ReadableState(options, this, isDuplex);
       if (options) {
@@ -7086,15 +7086,15 @@ var require_readable2 = __commonJS({
         }
       });
     }
-    Readable2.prototype.destroy = destroyImpl.destroy;
-    Readable2.prototype._undestroy = destroyImpl.undestroy;
-    Readable2.prototype._destroy = function(err, cb) {
+    Readable3.prototype.destroy = destroyImpl.destroy;
+    Readable3.prototype._undestroy = destroyImpl.undestroy;
+    Readable3.prototype._destroy = function(err, cb) {
       cb(err);
     };
-    Readable2.prototype[EE.captureRejectionSymbol] = function(err) {
+    Readable3.prototype[EE.captureRejectionSymbol] = function(err) {
       this.destroy(err);
     };
-    Readable2.prototype[SymbolAsyncDispose] = function() {
+    Readable3.prototype[SymbolAsyncDispose] = function() {
       let error;
       if (!this.destroyed) {
         error = this.readableEnded ? null : new AbortError();
@@ -7102,10 +7102,10 @@ var require_readable2 = __commonJS({
       }
       return new Promise2((resolve2, reject) => eos(this, (err) => err && err !== error ? reject(err) : resolve2(null)));
     };
-    Readable2.prototype.push = function(chunk, encoding) {
+    Readable3.prototype.push = function(chunk, encoding) {
       return readableAddChunk(this, chunk, encoding, false);
     };
-    Readable2.prototype.unshift = function(chunk, encoding) {
+    Readable3.prototype.unshift = function(chunk, encoding) {
       return readableAddChunk(this, chunk, encoding, true);
     };
     function readableAddChunk(stream, chunk, encoding, addToFront) {
@@ -7179,11 +7179,11 @@ var require_readable2 = __commonJS({
       }
       maybeReadMore(stream, state);
     }
-    Readable2.prototype.isPaused = function() {
+    Readable3.prototype.isPaused = function() {
       const state = this._readableState;
       return state[kPaused] === true || state.flowing === false;
     };
-    Readable2.prototype.setEncoding = function(enc) {
+    Readable3.prototype.setEncoding = function(enc) {
       const decoder = new StringDecoder(enc);
       this._readableState.decoder = decoder;
       this._readableState.encoding = this._readableState.decoder.encoding;
@@ -7222,7 +7222,7 @@ var require_readable2 = __commonJS({
       if (n <= state.length) return n;
       return state.ended ? state.length : 0;
     }
-    Readable2.prototype.read = function(n) {
+    Readable3.prototype.read = function(n) {
       debug("read", n);
       if (n === void 0) {
         n = NaN;
@@ -7344,10 +7344,10 @@ var require_readable2 = __commonJS({
       }
       state.readingMore = false;
     }
-    Readable2.prototype._read = function(n) {
+    Readable3.prototype._read = function(n) {
       throw new ERR_METHOD_NOT_IMPLEMENTED("_read()");
     };
-    Readable2.prototype.pipe = function(dest, pipeOpts) {
+    Readable3.prototype.pipe = function(dest, pipeOpts) {
       const src = this;
       const state = this._readableState;
       if (state.pipes.length === 1) {
@@ -7472,7 +7472,7 @@ var require_readable2 = __commonJS({
         }
       };
     }
-    Readable2.prototype.unpipe = function(dest) {
+    Readable3.prototype.unpipe = function(dest) {
       const state = this._readableState;
       const unpipeInfo = {
         hasUnpiped: false
@@ -7495,7 +7495,7 @@ var require_readable2 = __commonJS({
       dest.emit("unpipe", this, unpipeInfo);
       return this;
     };
-    Readable2.prototype.on = function(ev, fn) {
+    Readable3.prototype.on = function(ev, fn) {
       const res = Stream.prototype.on.call(this, ev, fn);
       const state = this._readableState;
       if (ev === "data") {
@@ -7516,16 +7516,16 @@ var require_readable2 = __commonJS({
       }
       return res;
     };
-    Readable2.prototype.addListener = Readable2.prototype.on;
-    Readable2.prototype.removeListener = function(ev, fn) {
+    Readable3.prototype.addListener = Readable3.prototype.on;
+    Readable3.prototype.removeListener = function(ev, fn) {
       const res = Stream.prototype.removeListener.call(this, ev, fn);
       if (ev === "readable") {
         process2.nextTick(updateReadableListening, this);
       }
       return res;
     };
-    Readable2.prototype.off = Readable2.prototype.removeListener;
-    Readable2.prototype.removeAllListeners = function(ev) {
+    Readable3.prototype.off = Readable3.prototype.removeListener;
+    Readable3.prototype.removeAllListeners = function(ev) {
       const res = Stream.prototype.removeAllListeners.apply(this, arguments);
       if (ev === "readable" || ev === void 0) {
         process2.nextTick(updateReadableListening, this);
@@ -7547,7 +7547,7 @@ var require_readable2 = __commonJS({
       debug("readable nexttick read 0");
       self2.read(0);
     }
-    Readable2.prototype.resume = function() {
+    Readable3.prototype.resume = function() {
       const state = this._readableState;
       if (!state.flowing) {
         debug("resume");
@@ -7573,7 +7573,7 @@ var require_readable2 = __commonJS({
       flow(stream);
       if (state.flowing && !state.reading) stream.read(0);
     }
-    Readable2.prototype.pause = function() {
+    Readable3.prototype.pause = function() {
       debug("call pause flowing=%j", this._readableState.flowing);
       if (this._readableState.flowing !== false) {
         debug("pause");
@@ -7588,7 +7588,7 @@ var require_readable2 = __commonJS({
       debug("flow", state.flowing);
       while (state.flowing && stream.read() !== null) ;
     }
-    Readable2.prototype.wrap = function(stream) {
+    Readable3.prototype.wrap = function(stream) {
       let paused = false;
       stream.on("data", (chunk) => {
         if (!this.push(chunk) && stream.pause) {
@@ -7623,10 +7623,10 @@ var require_readable2 = __commonJS({
       }
       return this;
     };
-    Readable2.prototype[SymbolAsyncIterator] = function() {
+    Readable3.prototype[SymbolAsyncIterator] = function() {
       return streamToAsyncIterator(this);
     };
-    Readable2.prototype.iterator = function(options) {
+    Readable3.prototype.iterator = function(options) {
       if (options !== void 0) {
         validateObject(options, "options");
       }
@@ -7634,7 +7634,7 @@ var require_readable2 = __commonJS({
     };
     function streamToAsyncIterator(stream, options) {
       if (typeof stream.read !== "function") {
-        stream = Readable2.wrap(stream, {
+        stream = Readable3.wrap(stream, {
           objectMode: true
         });
       }
@@ -7690,7 +7690,7 @@ var require_readable2 = __commonJS({
         }
       }
     }
-    ObjectDefineProperties(Readable2.prototype, {
+    ObjectDefineProperties(Readable3.prototype, {
       readable: {
         __proto__: null,
         get() {
@@ -7817,7 +7817,7 @@ var require_readable2 = __commonJS({
         }
       }
     });
-    Readable2._fromList = fromList;
+    Readable3._fromList = fromList;
     function fromList(n, state) {
       if (state.length === 0) return null;
       let ret;
@@ -7864,23 +7864,23 @@ var require_readable2 = __commonJS({
         stream.end();
       }
     }
-    Readable2.from = function(iterable, opts) {
-      return from(Readable2, iterable, opts);
+    Readable3.from = function(iterable, opts) {
+      return from(Readable3, iterable, opts);
     };
     var webStreamsAdapters;
     function lazyWebStreams() {
       if (webStreamsAdapters === void 0) webStreamsAdapters = {};
       return webStreamsAdapters;
     }
-    Readable2.fromWeb = function(readableStream, options) {
+    Readable3.fromWeb = function(readableStream, options) {
       return lazyWebStreams().newStreamReadableFromReadableStream(readableStream, options);
     };
-    Readable2.toWeb = function(streamReadable, options) {
+    Readable3.toWeb = function(streamReadable, options) {
       return lazyWebStreams().newReadableStreamFromStreamReadable(streamReadable, options);
     };
-    Readable2.wrap = function(src, options) {
+    Readable3.wrap = function(src, options) {
       var _ref, _src$readableObjectMo;
-      return new Readable2({
+      return new Readable3({
         objectMode: (_ref = (_src$readableObjectMo = src.readableObjectMode) !== null && _src$readableObjectMo !== void 0 ? _src$readableObjectMo : src.objectMode) !== null && _ref !== void 0 ? _ref : true,
         ...options,
         destroy(err, callback) {
@@ -8536,7 +8536,7 @@ var require_duplexify = __commonJS({
     } = require_errors();
     var { destroyer } = require_destroy2();
     var Duplex = require_duplex();
-    var Readable2 = require_readable2();
+    var Readable3 = require_readable2();
     var Writable = require_writable();
     var { createDeferredPromise } = require_util2();
     var from = require_from();
@@ -8586,7 +8586,7 @@ var require_duplexify = __commonJS({
       }
       if (isReadableStream(body)) {
         return _duplexify({
-          readable: Readable2.fromWeb(body)
+          readable: Readable3.fromWeb(body)
         });
       }
       if (isWritableStream(body)) {
@@ -8750,7 +8750,7 @@ var require_duplexify = __commonJS({
       };
     }
     function _duplexify(pair) {
-      const r = pair.readable && typeof pair.readable.read !== "function" ? Readable2.wrap(pair.readable) : pair.readable;
+      const r = pair.readable && typeof pair.readable.read !== "function" ? Readable3.wrap(pair.readable) : pair.readable;
       const w = pair.writable;
       let readable = !!isReadable(r);
       let writable = !!isWritable(w);
@@ -8871,10 +8871,10 @@ var require_duplex = __commonJS({
       ObjectSetPrototypeOf
     } = require_primordials();
     module2.exports = Duplex;
-    var Readable2 = require_readable2();
+    var Readable3 = require_readable2();
     var Writable = require_writable();
-    ObjectSetPrototypeOf(Duplex.prototype, Readable2.prototype);
-    ObjectSetPrototypeOf(Duplex, Readable2);
+    ObjectSetPrototypeOf(Duplex.prototype, Readable3.prototype);
+    ObjectSetPrototypeOf(Duplex, Readable3);
     {
       const keys = ObjectKeys(Writable.prototype);
       for (let i = 0; i < keys.length; i++) {
@@ -8884,7 +8884,7 @@ var require_duplex = __commonJS({
     }
     function Duplex(options) {
       if (!(this instanceof Duplex)) return new Duplex(options);
-      Readable2.call(this, options);
+      Readable3.call(this, options);
       Writable.call(this, options);
       if (options) {
         this.allowHalfOpen = options.allowHalfOpen !== false;
@@ -8982,15 +8982,15 @@ var require_transform = __commonJS({
   "node_modules/readable-stream/lib/internal/streams/transform.js"(exports2, module2) {
     "use strict";
     var { ObjectSetPrototypeOf, Symbol: Symbol2 } = require_primordials();
-    module2.exports = Transform7;
+    module2.exports = Transform6;
     var { ERR_METHOD_NOT_IMPLEMENTED } = require_errors().codes;
     var Duplex = require_duplex();
     var { getHighWaterMark } = require_state();
-    ObjectSetPrototypeOf(Transform7.prototype, Duplex.prototype);
-    ObjectSetPrototypeOf(Transform7, Duplex);
+    ObjectSetPrototypeOf(Transform6.prototype, Duplex.prototype);
+    ObjectSetPrototypeOf(Transform6, Duplex);
     var kCallback = Symbol2("kCallback");
-    function Transform7(options) {
-      if (!(this instanceof Transform7)) return new Transform7(options);
+    function Transform6(options) {
+      if (!(this instanceof Transform6)) return new Transform6(options);
       const readableHighWaterMark = options ? getHighWaterMark(this, options, "readableHighWaterMark", true) : null;
       if (readableHighWaterMark === 0) {
         options = {
@@ -9044,11 +9044,11 @@ var require_transform = __commonJS({
         final.call(this);
       }
     }
-    Transform7.prototype._final = final;
-    Transform7.prototype._transform = function(chunk, encoding, callback) {
+    Transform6.prototype._final = final;
+    Transform6.prototype._transform = function(chunk, encoding, callback) {
       throw new ERR_METHOD_NOT_IMPLEMENTED("_transform()");
     };
-    Transform7.prototype._write = function(chunk, encoding, callback) {
+    Transform6.prototype._write = function(chunk, encoding, callback) {
       const rState = this._readableState;
       const wState = this._writableState;
       const length = rState.length;
@@ -9069,7 +9069,7 @@ var require_transform = __commonJS({
         }
       });
     };
-    Transform7.prototype._read = function() {
+    Transform6.prototype._read = function() {
       if (this[kCallback]) {
         const callback = this[kCallback];
         this[kCallback] = null;
@@ -9085,12 +9085,12 @@ var require_passthrough2 = __commonJS({
     "use strict";
     var { ObjectSetPrototypeOf } = require_primordials();
     module2.exports = PassThrough4;
-    var Transform7 = require_transform();
-    ObjectSetPrototypeOf(PassThrough4.prototype, Transform7.prototype);
-    ObjectSetPrototypeOf(PassThrough4, Transform7);
+    var Transform6 = require_transform();
+    ObjectSetPrototypeOf(PassThrough4.prototype, Transform6.prototype);
+    ObjectSetPrototypeOf(PassThrough4, Transform6);
     function PassThrough4(options) {
       if (!(this instanceof PassThrough4)) return new PassThrough4(options);
-      Transform7.call(this, options);
+      Transform6.call(this, options);
     }
     PassThrough4.prototype._transform = function(chunk, encoding, cb) {
       cb(null, chunk);
@@ -9131,7 +9131,7 @@ var require_pipeline = __commonJS({
     } = require_utils();
     var AbortController = globalThis.AbortController || require_abort_controller().AbortController;
     var PassThrough4;
-    var Readable2;
+    var Readable3;
     var addAbortListener;
     function destroyer(stream, reading, writing) {
       let finished = false;
@@ -9170,10 +9170,10 @@ var require_pipeline = __commonJS({
       throw new ERR_INVALID_ARG_TYPE("val", ["Readable", "Iterable", "AsyncIterable"], val);
     }
     async function* fromReadable(val) {
-      if (!Readable2) {
-        Readable2 = require_readable2();
+      if (!Readable3) {
+        Readable3 = require_readable2();
       }
-      yield* Readable2.prototype[SymbolAsyncIterator].call(val);
+      yield* Readable3.prototype[SymbolAsyncIterator].call(val);
     }
     async function pumpToNode(iterable, writable, finish, { end }) {
       let error;
@@ -11599,7 +11599,7 @@ var require_streamx = __commonJS({
         }
       }
     };
-    var Readable2 = class _Readable extends Stream {
+    var Readable3 = class _Readable extends Stream {
       constructor(opts) {
         super(opts);
         this._duplexState |= OPENING | WRITE_DONE | READ_READ_AHEAD;
@@ -11810,7 +11810,7 @@ var require_streamx = __commonJS({
         return this;
       }
     };
-    var Duplex = class extends Readable2 {
+    var Duplex = class extends Readable3 {
       // and Writable
       constructor(opts) {
         super(opts);
@@ -11848,7 +11848,7 @@ var require_streamx = __commonJS({
         return this;
       }
     };
-    var Transform7 = class extends Duplex {
+    var Transform6 = class extends Duplex {
       constructor(opts) {
         super(opts);
         this._transformState = new TransformState(this);
@@ -11892,7 +11892,7 @@ var require_streamx = __commonJS({
         this._flush(transformAfterFlush.bind(this));
       }
     };
-    var PassThrough4 = class extends Transform7 {
+    var PassThrough4 = class extends Transform6 {
     };
     function transformAfterFlush(err, data) {
       const cb = this._transformState.afterFinal;
@@ -12019,9 +12019,9 @@ var require_streamx = __commonJS({
       getStreamError,
       Stream,
       Writable,
-      Readable: Readable2,
+      Readable: Readable3,
       Duplex,
-      Transform: Transform7,
+      Transform: Transform6,
       // Export PassThrough for compatibility with Node.js core's stream module
       PassThrough: PassThrough4
     };
@@ -12293,7 +12293,7 @@ var require_headers = __commonJS({
 // node_modules/tar-stream/extract.js
 var require_extract = __commonJS({
   "node_modules/tar-stream/extract.js"(exports2, module2) {
-    var { Writable, Readable: Readable2, getStreamError } = require_streamx();
+    var { Writable, Readable: Readable3, getStreamError } = require_streamx();
     var FIFO = require_fast_fifo();
     var b4a = require_b4a();
     var headers = require_headers();
@@ -12341,7 +12341,7 @@ var require_extract = __commonJS({
         return buf.subarray(this._offset, this._offset += size);
       }
     };
-    var Source = class extends Readable2 {
+    var Source = class extends Readable3 {
       constructor(self2, header, offset) {
         super();
         this.header = header;
@@ -12657,7 +12657,7 @@ var require_constants = __commonJS({
 // node_modules/tar-stream/pack.js
 var require_pack = __commonJS({
   "node_modules/tar-stream/pack.js"(exports2, module2) {
-    var { Readable: Readable2, Writable, getStreamError } = require_streamx();
+    var { Readable: Readable3, Writable, getStreamError } = require_streamx();
     var b4a = require_b4a();
     var constants = require_constants();
     var headers = require_headers();
@@ -12750,7 +12750,7 @@ var require_pack = __commonJS({
         cb();
       }
     };
-    var Pack = class extends Readable2 {
+    var Pack = class extends Readable3 {
       constructor(opts) {
         super(opts);
         this._drain = noop;
@@ -13251,6 +13251,12 @@ function buildBackupNames(database, date) {
   const stem = `${sanitizeSegment(database)}-${formatBackupStamp(date)}Z`;
   return { zipName: `${stem}.zip`, entryName: `${stem}.sql` };
 }
+var DestinationError = class extends Error {
+  constructor(cause) {
+    super(errorMessage(cause), { cause });
+    this.name = "DestinationError";
+  }
+};
 async function runBackup(input) {
   if (running) return { busy: true };
   running = true;
@@ -13308,7 +13314,9 @@ async function runBackup(input) {
         const { warnings } = await Promise.race([dump.done, sink.failed]);
         phase = "upload";
         report();
-        const written = await sink.finish();
+        const written = await sink.finish().catch((failure) => {
+          throw new DestinationError(failure);
+        });
         return {
           busy: false,
           sizeBytes: written.bytesZip,
@@ -13438,22 +13446,24 @@ function clamp(value, min, max) {
 }
 
 // src/s3/client.ts
+var import_node_crypto2 = require("node:crypto");
+var import_node_fs2 = require("node:fs");
+var import_promises2 = require("node:fs/promises");
 var import_node_http = require("node:http");
 var import_node_https = require("node:https");
+var import_node_stream2 = require("node:stream");
 
 // src/s3/signer.ts
 var import_node_crypto = require("node:crypto");
+var UNRESERVED = /[A-Za-z0-9_\-~.]/;
 function uriEncode(input, encodeSlash = false) {
   let result = "";
-  for (let i = 0; i < input.length; i += 1) {
-    const char = input[i];
-    if (char >= "A" && char <= "Z" || char >= "a" && char <= "z" || char >= "0" && char <= "9" || char === "_" || char === "-" || char === "~" || char === ".") {
+  for (const byte of Buffer.from(input, "utf8")) {
+    const char = String.fromCharCode(byte);
+    if (UNRESERVED.test(char) || char === "/" && !encodeSlash) {
       result += char;
-    } else if (char === "/" && !encodeSlash) {
-      result += "/";
     } else {
-      const hex = char.charCodeAt(0).toString(16).toUpperCase();
-      result += hex.length < 2 ? `%0${hex}` : `%${hex}`;
+      result += `%${byte.toString(16).toUpperCase().padStart(2, "0")}`;
     }
   }
   return result;
@@ -13502,8 +13512,7 @@ function signS3Request(options) {
   }
   const canonicalHeaders = canonicalHeadersList.join("");
   const signedHeaders = headerKeys.join(";");
-  const rawPath = targetUrl.pathname || "/";
-  const canonicalUri = uriEncode(rawPath, false);
+  const canonicalUri = uriEncode(decodeURIComponent(targetUrl.pathname || "/"), false);
   const queryEntries = [];
   targetUrl.searchParams.forEach((value, key) => {
     queryEntries.push([uriEncode(key, true), uriEncode(value, true)]);
@@ -13553,6 +13562,13 @@ var S3Error = class extends Error {
   rawBody;
 };
 var DEFAULT_TIMEOUT_MS = 6e4;
+var MIB = 1024 * 1024;
+var DEFAULT_MULTIPART_THRESHOLD_BYTES = 100 * MIB;
+var DEFAULT_PART_SIZE_BYTES = 32 * MIB;
+var MAX_PARTS = 1e4;
+var PART_ATTEMPTS = 3;
+var MAX_RESPONSE_BYTES = 16 * MIB;
+var BODY_SLICE_BYTES = 64 * 1024;
 var S3Client = class {
   bucket;
   region;
@@ -13561,6 +13577,8 @@ var S3Client = class {
   accessKeyId;
   secretAccessKey;
   timeoutMs;
+  multipartThresholdBytes;
+  partSizeBytes;
   constructor(options) {
     if (!options.bucket || options.bucket.trim().length === 0) {
       throw new Error("S3 bucket name is required");
@@ -13577,11 +13595,13 @@ var S3Client = class {
     this.region = options.region?.trim() || "us-east-1";
     this.endpoint = options.endpoint?.trim() || void 0;
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    this.multipartThresholdBytes = options.multipartThresholdBytes ?? DEFAULT_MULTIPART_THRESHOLD_BYTES;
+    this.partSizeBytes = options.partSizeBytes ?? DEFAULT_PART_SIZE_BYTES;
     this.forcePathStyle = options.forcePathStyle ?? (this.endpoint !== void 0 && this.endpoint.length > 0);
   }
   buildUrl(key = "", query) {
     let baseUrl;
-    const cleanKey = key.replace(/^\/+/, "");
+    const cleanKey = uriEncode(key.replace(/^\/+/, ""), false);
     if (this.endpoint) {
       const ep = this.endpoint.replace(/\/+$/, "");
       if (this.forcePathStyle) {
@@ -13632,6 +13652,91 @@ var S3Client = class {
     const etag = response.headers.etag?.replace(/"/g, "") ?? "";
     return { etag };
   }
+  /** A single PUT is capped at 5 GB by S3 and restarts from zero on any network blip. */
+  async putFile(key, filePath, sizeBytes, payloadSha256) {
+    if (sizeBytes <= this.multipartThresholdBytes) {
+      return this.putObject(key, (0, import_node_fs2.createReadStream)(filePath), sizeBytes, payloadSha256);
+    }
+    const partSize = Math.max(this.partSizeBytes, Math.ceil(sizeBytes / MAX_PARTS));
+    const uploadId = await this.createMultipartUpload(key);
+    const file = await (0, import_promises2.open)(filePath, "r");
+    try {
+      const parts = [];
+      for (let offset = 0; offset < sizeBytes; offset += partSize) {
+        const length = Math.min(partSize, sizeBytes - offset);
+        const chunk = Buffer.alloc(length);
+        const { bytesRead } = await file.read(chunk, 0, length, offset);
+        if (bytesRead !== length) {
+          throw new Error(`Backup zip changed size during upload (read ${bytesRead} of ${length})`);
+        }
+        const partNumber = parts.length + 1;
+        parts.push({ partNumber, etag: await this.uploadPart(key, uploadId, partNumber, chunk) });
+      }
+      return await this.completeMultipartUpload(key, uploadId, parts);
+    } catch (failure) {
+      await this.abortMultipartUpload(key, uploadId).catch(() => {
+      });
+      throw failure;
+    } finally {
+      await file.close();
+    }
+  }
+  async createMultipartUpload(key) {
+    const response = await this.send("POST", key, { uploads: "" }, void 0, {
+      "content-type": "application/zip"
+    });
+    const uploadId = /<UploadId>(.*?)<\/UploadId>/s.exec(response.body)?.[1]?.trim();
+    if (!uploadId) throw new Error("S3 did not return an UploadId for the multipart upload");
+    return unescapeXml(uploadId);
+  }
+  async uploadPart(key, uploadId, partNumber, chunk) {
+    const query = { partNumber: String(partNumber), uploadId };
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        const response = await this.send("PUT", key, query, chunk);
+        const etag = response.headers.etag;
+        if (typeof etag !== "string" || etag.length === 0) {
+          throw new Error(`S3 did not return an ETag for part ${partNumber}`);
+        }
+        return etag;
+      } catch (failure) {
+        const rejected = failure instanceof S3Error && failure.statusCode >= 400 && failure.statusCode < 500;
+        if (rejected || attempt >= PART_ATTEMPTS) throw failure;
+      }
+    }
+  }
+  async completeMultipartUpload(key, uploadId, parts) {
+    const partsXml = parts.map(
+      (part) => `<Part><PartNumber>${part.partNumber}</PartNumber><ETag>${escapeXml(part.etag)}</ETag></Part>`
+    ).join("");
+    const body = Buffer.from(
+      `<?xml version="1.0" encoding="UTF-8"?><CompleteMultipartUpload>${partsXml}</CompleteMultipartUpload>`,
+      "utf8"
+    );
+    const response = await this.send("POST", key, { uploadId }, body, {
+      "content-type": "application/xml"
+    });
+    if (response.body.includes("<Error>")) {
+      throw parseS3ErrorXml(response.body, response.statusCode);
+    }
+    const etag = /<ETag>(.*?)<\/ETag>/s.exec(response.body)?.[1]?.trim() ?? "";
+    return { etag: unescapeXml(etag).replace(/"/g, "") };
+  }
+  async abortMultipartUpload(key, uploadId) {
+    await this.send("DELETE", key, { uploadId });
+  }
+  send(method, key, query, body, headers = {}) {
+    const signed = signS3Request({
+      method,
+      url: this.buildUrl(key, query),
+      headers: body ? { ...headers, "content-length": String(body.length) } : headers,
+      payloadHash: sha256Hex(body ?? ""),
+      accessKeyId: this.accessKeyId,
+      secretAccessKey: this.secretAccessKey,
+      region: this.region
+    });
+    return this.executeRequest(signed, body);
+  }
   async listObjectsV2(options) {
     const query = { "list-type": "2" };
     if (options?.prefix) query.prefix = options.prefix;
@@ -13663,7 +13768,9 @@ var S3Client = class {
       url,
       headers: {
         "content-type": "application/xml",
-        "content-length": String(bodyBuffer.length)
+        "content-length": String(bodyBuffer.length),
+        // AWS rejects multi-object deletes without it (MissingContentMD5).
+        "content-md5": (0, import_node_crypto2.createHash)("md5").update(bodyBuffer).digest("base64")
       },
       payloadHash,
       accessKeyId: this.accessKeyId,
@@ -13681,11 +13788,16 @@ var S3Client = class {
     const target = new URL(signed.url);
     const send = target.protocol === "http:" ? import_node_http.request : import_node_https.request;
     return new Promise((resolve2, reject) => {
-      let aborted = false;
-      const timer = setTimeout(() => {
-        aborted = true;
-        req.destroy(new Error(`S3 request timed out after ${this.timeoutMs}ms`));
+      const idle = setTimeout(() => {
+        const stalled = new Error(`S3 request stalled for ${this.timeoutMs}ms`);
+        req.destroy(stalled);
+        reject(stalled);
       }, this.timeoutMs);
+      const settle = (finish) => (value) => {
+        clearTimeout(idle);
+        finish(value);
+      };
+      const fail = settle(reject);
       const req = send(
         target,
         {
@@ -13693,49 +13805,68 @@ var S3Client = class {
           headers: signed.headers
         },
         (res) => {
-          clearTimeout(timer);
           const chunks = [];
+          let received = 0;
           res.on("data", (chunk) => {
-            if (chunks.length < 1024) chunks.push(chunk);
+            idle.refresh();
+            received += chunk.length;
+            if (received > MAX_RESPONSE_BYTES) {
+              const oversized = new Error(`S3 response exceeded ${MAX_RESPONSE_BYTES} bytes`);
+              req.destroy(oversized);
+              fail(oversized);
+              return;
+            }
+            chunks.push(chunk);
           });
-          res.on("error", (resErr) => {
-            clearTimeout(timer);
-            reject(resErr);
-          });
+          res.on("error", fail);
           res.on("end", () => {
-            clearTimeout(timer);
             const statusCode = res.statusCode ?? 0;
             const resBody = Buffer.concat(chunks).toString("utf8");
             if (statusCode >= 200 && statusCode < 300) {
-              resolve2({ statusCode, headers: res.headers, body: resBody });
+              settle(resolve2)({ statusCode, headers: res.headers, body: resBody });
               return;
             }
-            const parsedError = parseS3ErrorXml(resBody, statusCode);
-            reject(parsedError);
+            fail(parseS3ErrorXml(resBody, statusCode));
           });
         }
       );
-      req.on("error", (reqErr) => {
-        clearTimeout(timer);
-        if (!aborted) reject(reqErr);
-      });
+      req.on("error", fail);
       if (body) {
-        if (Buffer.isBuffer(body)) {
-          req.end(body);
-        } else {
-          body.on("error", (streamErr) => {
-            clearTimeout(timer);
-            req.destroy(streamErr);
-            reject(streamErr);
-          });
-          body.pipe(req);
-        }
+        const source = Buffer.isBuffer(body) ? import_node_stream2.Readable.from(sliceBuffer(body)) : body;
+        source.on("error", (streamErr) => {
+          req.destroy(streamErr);
+          fail(streamErr);
+        });
+        source.on("data", () => idle.refresh());
+        source.pipe(req);
       } else {
         req.end();
       }
     });
   }
 };
+function* sliceBuffer(buffer) {
+  for (let offset = 0; offset < buffer.length; offset += BODY_SLICE_BYTES) {
+    yield buffer.subarray(offset, offset + BODY_SLICE_BYTES);
+  }
+}
+var XML_ENTITIES = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'"
+};
+function unescapeXml(str) {
+  return str.replace(/&(?:#x([0-9a-f]+)|#(\d+)|(\w+));/gi, (entity, hex, decimal, name) => {
+    if (hex !== void 0) return String.fromCodePoint(Number.parseInt(hex, 16));
+    if (decimal !== void 0) return String.fromCodePoint(Number.parseInt(decimal, 10));
+    return XML_ENTITIES[name.toLowerCase()] ?? entity;
+  });
+}
+function decodeText(raw) {
+  return raw === void 0 ? void 0 : unescapeXml(raw.trim());
+}
 function escapeXml(str) {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
@@ -13743,12 +13874,14 @@ function parseS3ErrorXml(xml, statusCode) {
   const codeMatch = /<Code>(.*?)<\/Code>/s.exec(xml);
   const messageMatch = /<Message>(.*?)<\/Message>/s.exec(xml);
   const code = codeMatch?.[1]?.trim() ?? `HTTP_${statusCode}`;
-  const message = messageMatch?.[1]?.trim() ?? (xml.slice(0, 200).trim() || `Request failed with HTTP status ${statusCode}`);
+  const message = decodeText(messageMatch?.[1]) ?? (xml.slice(0, 200).trim() || `Request failed with HTTP status ${statusCode}`);
   return new S3Error(code, message, statusCode, xml);
 }
 function parseListObjectsV2Xml(xml) {
   const isTruncated = /<IsTruncated>(true|false)<\/IsTruncated>/i.exec(xml)?.[1]?.toLowerCase() === "true";
-  const nextToken = /<NextContinuationToken>(.*?)<\/NextContinuationToken>/s.exec(xml)?.[1]?.trim();
+  const nextToken = decodeText(
+    /<NextContinuationToken>(.*?)<\/NextContinuationToken>/s.exec(xml)?.[1]
+  );
   const objects = [];
   const contentsRegex = /<Contents>(.*?)<\/Contents>/gs;
   let match2 = null;
@@ -13756,7 +13889,7 @@ function parseListObjectsV2Xml(xml) {
     match2 = contentsRegex.exec(xml);
     if (!match2) break;
     const itemXml = match2[1] ?? "";
-    const key = /<Key>(.*?)<\/Key>/s.exec(itemXml)?.[1]?.trim();
+    const key = decodeText(/<Key>(.*?)<\/Key>/s.exec(itemXml)?.[1]);
     const lastModifiedRaw = /<LastModified>(.*?)<\/LastModified>/s.exec(itemXml)?.[1]?.trim();
     const sizeRaw = /<Size>(\d+)<\/Size>/s.exec(itemXml)?.[1]?.trim();
     const etag = (/ <ETag>(.*?)<\/ETag>/s.exec(itemXml)?.[1] ?? /<ETag>(.*?)<\/ETag>/s.exec(itemXml)?.[1]?.trim() ?? "").replace(/"/g, "");
@@ -13783,7 +13916,7 @@ function parseDeleteResultXml(xml, fallbackKeys) {
   while (true) {
     dMatch = deletedRegex.exec(xml);
     if (!dMatch) break;
-    const k = /<Key>(.*?)<\/Key>/s.exec(dMatch[1] ?? "")?.[1]?.trim();
+    const k = decodeText(/<Key>(.*?)<\/Key>/s.exec(dMatch[1] ?? "")?.[1]);
     if (k) deletedKeys.push(k);
   }
   const errorRegex = /<Error>(.*?)<\/Error>/gs;
@@ -13792,9 +13925,9 @@ function parseDeleteResultXml(xml, fallbackKeys) {
     eMatch = errorRegex.exec(xml);
     if (!eMatch) break;
     const eXml = eMatch[1] ?? "";
-    const k = /<Key>(.*?)<\/Key>/s.exec(eXml)?.[1]?.trim() ?? "";
+    const k = decodeText(/<Key>(.*?)<\/Key>/s.exec(eXml)?.[1]) ?? "";
     const code = /<Code>(.*?)<\/Code>/s.exec(eXml)?.[1]?.trim() ?? "Unknown";
-    const msg = /<Message>(.*?)<\/Message>/s.exec(eXml)?.[1]?.trim() ?? "";
+    const msg = decodeText(/<Message>(.*?)<\/Message>/s.exec(eXml)?.[1]) ?? "";
     errors.push({ key: k, code, message: msg });
   }
   if (deletedKeys.length === 0 && errors.length === 0) {
@@ -13804,11 +13937,15 @@ function parseDeleteResultXml(xml, fallbackKeys) {
 }
 
 // src/s3/sink.ts
-var import_node_crypto2 = require("node:crypto");
-var import_node_fs2 = require("node:fs");
-var import_promises2 = require("node:fs/promises");
+var import_promises4 = require("node:fs/promises");
+var import_node_path3 = __toESM(require("node:path"), 1);
+
+// src/zip-sink.ts
+var import_node_crypto3 = require("node:crypto");
+var import_node_fs3 = require("node:fs");
+var import_promises3 = require("node:fs/promises");
 var import_node_path2 = __toESM(require("node:path"), 1);
-var import_node_stream2 = require("node:stream");
+var import_node_stream3 = require("node:stream");
 
 // node_modules/archiver/lib/core.js
 var import_fs = require("fs");
@@ -15602,10 +15739,10 @@ var Minimatch = class {
       }
       return filtered.join("/");
     }).join("|");
-    const [open, close] = set.length > 1 ? ["(?:", ")"] : ["", ""];
-    re = "^" + open + re + close + "$";
+    const [open2, close] = set.length > 1 ? ["(?:", ")"] : ["", ""];
+    re = "^" + open2 + re + close + "$";
     if (this.partial) {
-      re = "^(?:\\/|" + open + re.slice(1, -1) + close + ")$";
+      re = "^(?:\\/|" + open2 + re.slice(1, -1) + close + ")$";
     }
     if (this.negate)
       re = "^(?!" + re + ").+$";
@@ -18173,129 +18310,16 @@ var ZipArchive = class extends Archiver {
   }
 };
 
-// src/s3/sink.ts
-var S3Sink = class {
-  constructor(options) {
-    this.options = options;
-  }
-  options;
-  async open(options) {
-    const root = this.options.tmpDir;
-    await (0, import_promises2.mkdir)(root, { recursive: true });
-    const dir = await (0, import_promises2.mkdtemp)(import_node_path2.default.join(root, "qbx-s3-sink-"));
-    const spoolPath = import_node_path2.default.join(dir, "backup.zip");
-    const spool = createSpool(spoolPath, options, this.options.maxBytes);
-    const opts = this.options;
-    return {
-      append: spool.append,
-      failed: spool.failed,
-      finish: async () => {
-        try {
-          const result = await spool.finish();
-          if (opts.maxBytes !== void 0 && result.bytesZip > opts.maxBytes) {
-            throw new Error(
-              `Backup zip is ${result.bytesZip} bytes, exceeding the ${opts.maxBytes} byte limit`
-            );
-          }
-          const fileStream = (0, import_node_fs2.createReadStream)(spoolPath);
-          await opts.client.putObject(opts.s3Key, fileStream, result.bytesZip, result.sha256);
-          const localCopy = await keepLocalCopy(spoolPath, opts.keepLocalPath);
-          const s3Location = `s3://${opts.client.bucket}/${opts.s3Key}`;
-          return localCopy === null ? { ...result, location: s3Location } : { ...result, location: `${s3Location} (+ local: ${localCopy})` };
-        } finally {
-          await (0, import_promises2.rm)(dir, { recursive: true, force: true });
-        }
-      },
-      abort: async () => {
-        await spool.abort();
-        await (0, import_promises2.rm)(dir, { recursive: true, force: true });
-      }
-    };
-  }
-};
-function createSpool(target, options, maxBytes) {
-  const zip = new ZipArchive({ zlib: { level: options.zipLevel }, forceZip64: true });
-  const counter = createCounter(options.onZipBytes, maxBytes);
-  const file = (0, import_node_fs2.createWriteStream)(target);
-  let source = null;
-  const flushed = new Promise((resolve2, reject) => {
-    file.once("close", () => resolve2());
-    file.once("error", reject);
-    counter.transform.once("error", reject);
-    zip.on("error", (zipError) => reject(new Error(`Zip failed: ${zipError.message}`)));
-    zip.on("warning", (warning) => {
-      if (warning.code !== "ENOENT") reject(new Error(`Zip warning: ${warning.message}`));
-    });
-  });
-  const failed = new Promise((_, reject) => {
-    flushed.catch((flushError) => {
-      source?.destroy(flushError);
-      reject(flushError);
-    });
-  });
-  void failed.catch(() => {
-  });
-  zip.pipe(counter.transform).pipe(file);
-  return {
-    append: (input) => {
-      source = input;
-      zip.append(input, { name: options.entryName });
-    },
-    finish: async () => {
-      await zip.finalize();
-      await flushed;
-      return { bytesZip: counter.bytes(), sha256: counter.digest() };
-    },
-    abort: async () => {
-      zip.abort();
-      counter.transform.destroy();
-      file.destroy();
-      await (0, import_promises2.rm)(target, { force: true });
-    },
-    failed
-  };
-}
-function createCounter(onBytes, maxBytes) {
-  const hash = (0, import_node_crypto2.createHash)("sha256");
-  let total = 0;
-  const transform = new import_node_stream2.Transform({
-    transform(chunk, _encoding, callback) {
-      total += chunk.length;
-      hash.update(chunk);
-      onBytes?.(total);
-      if (maxBytes !== void 0 && total > maxBytes) {
-        callback(new Error(`Backup zip exceeded the ${maxBytes} byte limit for this job`));
-        return;
-      }
-      callback(null, chunk);
-    }
-  });
-  return { transform, bytes: () => total, digest: () => hash.digest("hex") };
-}
-async function keepLocalCopy(spoolPath, destination) {
-  if (destination === void 0 || destination.length === 0) return null;
-  await (0, import_promises2.mkdir)(import_node_path2.default.dirname(destination), { recursive: true });
-  const partPath = `${destination}.part`;
-  await (0, import_promises2.copyFile)(spoolPath, partPath);
-  await (0, import_promises2.rename)(partPath, destination);
-  return destination;
-}
-
 // src/zip-sink.ts
-var import_node_crypto3 = require("node:crypto");
-var import_node_fs3 = require("node:fs");
-var import_promises3 = require("node:fs/promises");
-var import_node_path3 = __toESM(require("node:path"), 1);
-var import_node_stream3 = require("node:stream");
 var LocalFileSink = class {
   constructor(filePath) {
     this.filePath = filePath;
   }
   filePath;
   async open(options) {
-    await (0, import_promises3.mkdir)(import_node_path3.default.dirname(this.filePath), { recursive: true });
+    await (0, import_promises3.mkdir)(import_node_path2.default.dirname(this.filePath), { recursive: true });
     const partPath = `${this.filePath}.part`;
-    const spool = createSpool2(partPath, options);
+    const spool = createSpool(partPath, options);
     const filePath = this.filePath;
     return {
       append: spool.append,
@@ -18309,9 +18333,9 @@ var LocalFileSink = class {
     };
   }
 };
-function createSpool2(target, options, maxBytes) {
+function createSpool(target, options, maxBytes) {
   const zip = new ZipArchive({ zlib: { level: options.zipLevel }, forceZip64: true });
-  const counter = createCounter2(options.onZipBytes, maxBytes);
+  const counter = createCounter(options.onZipBytes, maxBytes);
   const file = (0, import_node_fs3.createWriteStream)(target);
   let source = null;
   const flushed = new Promise((resolve2, reject) => {
@@ -18351,7 +18375,7 @@ function createSpool2(target, options, maxBytes) {
     failed
   };
 }
-function createCounter2(onBytes, maxBytes) {
+function createCounter(onBytes, maxBytes) {
   const hash = (0, import_node_crypto3.createHash)("sha256");
   let total = 0;
   const transform = new import_node_stream3.Transform({
@@ -18368,6 +18392,54 @@ function createCounter2(onBytes, maxBytes) {
   });
   return { transform, bytes: () => total, digest: () => hash.digest("hex") };
 }
+async function keepLocalCopy(spoolPath, destination) {
+  if (destination === void 0 || destination.length === 0) return null;
+  await (0, import_promises3.mkdir)(import_node_path2.default.dirname(destination), { recursive: true });
+  const partPath = `${destination}.part`;
+  await (0, import_promises3.copyFile)(spoolPath, partPath);
+  await (0, import_promises3.rename)(partPath, destination);
+  return destination;
+}
+
+// src/s3/sink.ts
+var S3Sink = class {
+  constructor(options) {
+    this.options = options;
+  }
+  options;
+  async open(options) {
+    const root = this.options.tmpDir;
+    await (0, import_promises4.mkdir)(root, { recursive: true });
+    const dir = await (0, import_promises4.mkdtemp)(import_node_path3.default.join(root, "qbx-s3-sink-"));
+    const spoolPath = import_node_path3.default.join(dir, "backup.zip");
+    const spool = createSpool(spoolPath, options, this.options.maxBytes);
+    const opts = this.options;
+    return {
+      append: spool.append,
+      failed: spool.failed,
+      finish: async () => {
+        try {
+          const result = await spool.finish();
+          if (opts.maxBytes !== void 0 && result.bytesZip > opts.maxBytes) {
+            throw new Error(
+              `Backup zip is ${result.bytesZip} bytes, exceeding the ${opts.maxBytes} byte limit`
+            );
+          }
+          await opts.client.putFile(opts.s3Key, spoolPath, result.bytesZip, result.sha256);
+          const localCopy = await keepLocalCopy(spoolPath, opts.keepLocalPath);
+          const s3Location = `s3://${opts.client.bucket}/${opts.s3Key}`;
+          return localCopy === null ? { ...result, location: s3Location } : { ...result, location: `${s3Location} (+ local: ${localCopy})` };
+        } finally {
+          await (0, import_promises4.rm)(dir, { recursive: true, force: true });
+        }
+      },
+      abort: async () => {
+        await spool.abort();
+        await (0, import_promises4.rm)(dir, { recursive: true, force: true });
+      }
+    };
+  }
+};
 
 // src/cli.ts
 var FLAG_BY_CONVAR = {
