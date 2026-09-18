@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
@@ -97,5 +97,26 @@ describe("Retention Engine", () => {
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
+  });
+
+  it("leaves zips it did not create alone", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "qbx-retention-test-"));
+    try {
+      const names = ["db-2026-09-01_12-00-00Z.zip", "db-2026-09-03_12-00-00Z.zip", "keep-me.zip"];
+      for (const name of names) {
+        await writeFile(path.join(dir, name), "x");
+      }
+
+      const result = await pruneLocalDirectory(dir, { keepCount: 1 });
+      expect(result.deletedFiles).toEqual(["db-2026-09-01_12-00-00Z.zip"]);
+      expect((await readdir(dir)).sort()).toEqual(["db-2026-09-03_12-00-00Z.zip", "keep-me.zip"]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("tolerates a missing folder", async () => {
+    const missing = path.join(tmpdir(), "qbx-missing-folder-xyz");
+    expect((await pruneLocalDirectory(missing, { keepCount: 3 })).deletedFiles).toEqual([]);
   });
 });

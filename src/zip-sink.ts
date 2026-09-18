@@ -108,14 +108,14 @@ export class UploadSink implements BackupSink {
   }
 }
 
-type Spool = {
+export type Spool = {
   append: (source: Readable) => void;
   finish: () => Promise<SinkResult>;
   abort: () => Promise<void>;
   failed: Promise<never>;
 };
 
-function createSpool(target: string, options: SinkOpenOptions, maxBytes?: number): Spool {
+export function createSpool(target: string, options: SinkOpenOptions, maxBytes?: number): Spool {
   const zip = new ZipArchive({ zlib: { level: options.zipLevel }, forceZip64: true });
   const counter = createCounter(options.onZipBytes, maxBytes);
   const file = createWriteStream(target);
@@ -179,7 +179,10 @@ function createCounter(onBytes: ((total: number) => void) | undefined, maxBytes?
   return { transform, bytes: () => total, digest: () => hash.digest("hex") };
 }
 
-async function keepLocalCopy(spoolPath: string, destination?: string): Promise<string | null> {
+export async function keepLocalCopy(
+  spoolPath: string,
+  destination?: string,
+): Promise<string | null> {
   if (destination === undefined || destination.length === 0) return null;
   await mkdir(path.dirname(destination), { recursive: true });
   const partPath = `${destination}.part`;
