@@ -1,8 +1,11 @@
 import { readdir, rm, stat, statfs } from "node:fs/promises";
 import path from "node:path";
 import type { S3Client } from "./s3/client";
+import type { S3ObjectInfo } from "./s3/types";
 
 export const BACKUP_NAME_PATTERN = /^[A-Za-z0-9._-]+-(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})Z\.zip$/;
+
+const S3_DELETE_BATCH_SIZE = 1000;
 
 export type BackupEntry = {
   name: string;
@@ -228,10 +231,16 @@ export async function pruneS3Bucket(
   policy: S3RetentionPolicy,
 ): Promise<PruneS3Result> {
   const prefix = policy.prefix ?? "";
-  const listResult = await client.listObjectsV2({ prefix });
+  const objects: S3ObjectInfo[] = [];
+  let continuationToken: string | undefined;
+  do {
+    const page = await client.listObjectsV2({ prefix, continuationToken });
+    objects.push(...page.objects);
+    continuationToken = page.isTruncated ? page.nextContinuationToken : undefined;
+  } while (continuationToken !== undefined);
 
   const entries: (BackupEntry & { key: string })[] = [];
-  for (const obj of listResult.objects) {
+  for (const obj of objects) {
     const filename = path.basename(obj.key);
     if (!isOwnBackupFile(filename)) continue;
     const ts = parseBackupTimestamp(filename) ?? obj.lastModified.getTime();
@@ -258,7 +267,12 @@ export async function pruneS3Bucket(
   }
 
   const keysToDelete = prunable.map((p) => p.key);
-  const deleteResult = await client.deleteObjects(keysToDelete);
+  const result: PruneS3Result = { deletedKeys: [], errors: [] };
+  for (let i = 0; i < keysToDelete.length; i += S3_DELETE_BATCH_SIZE) {
+    const batch = await client.deleteObjects(keysToDelete.slice(i, i + S3_DELETE_BATCH_SIZE));
+    result.deletedKeys.push(...batch.deletedKeys);
+    result.errors.push(...batch.errors);
+  }
 
-  return deleteResult;
+  return result;
 }
