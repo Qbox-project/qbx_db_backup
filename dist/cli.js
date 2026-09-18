@@ -1863,11 +1863,11 @@ var require_stream_readable = __commonJS({
 var require_stream_transform = __commonJS({
   "node_modules/lazystream/node_modules/readable-stream/lib/_stream_transform.js"(exports2, module2) {
     "use strict";
-    module2.exports = Transform6;
+    module2.exports = Transform7;
     var Duplex = require_stream_duplex();
     var util3 = Object.create(require_util());
     util3.inherits = require_inherits();
-    util3.inherits(Transform6, Duplex);
+    util3.inherits(Transform7, Duplex);
     function afterTransform(er, data) {
       var ts = this._transformState;
       ts.transforming = false;
@@ -1886,8 +1886,8 @@ var require_stream_transform = __commonJS({
         this._read(rs.highWaterMark);
       }
     }
-    function Transform6(options) {
-      if (!(this instanceof Transform6)) return new Transform6(options);
+    function Transform7(options) {
+      if (!(this instanceof Transform7)) return new Transform7(options);
       Duplex.call(this, options);
       this._transformState = {
         afterTransform: afterTransform.bind(this),
@@ -1915,14 +1915,14 @@ var require_stream_transform = __commonJS({
         done(this, null, null);
       }
     }
-    Transform6.prototype.push = function(chunk, encoding) {
+    Transform7.prototype.push = function(chunk, encoding) {
       this._transformState.needTransform = false;
       return Duplex.prototype.push.call(this, chunk, encoding);
     };
-    Transform6.prototype._transform = function(chunk, encoding, cb) {
+    Transform7.prototype._transform = function(chunk, encoding, cb) {
       throw new Error("_transform() is not implemented");
     };
-    Transform6.prototype._write = function(chunk, encoding, cb) {
+    Transform7.prototype._write = function(chunk, encoding, cb) {
       var ts = this._transformState;
       ts.writecb = cb;
       ts.writechunk = chunk;
@@ -1932,7 +1932,7 @@ var require_stream_transform = __commonJS({
         if (ts.needTransform || rs.needReadable || rs.length < rs.highWaterMark) this._read(rs.highWaterMark);
       }
     };
-    Transform6.prototype._read = function(n) {
+    Transform7.prototype._read = function(n) {
       var ts = this._transformState;
       if (ts.writechunk !== null && ts.writecb && !ts.transforming) {
         ts.transforming = true;
@@ -1941,7 +1941,7 @@ var require_stream_transform = __commonJS({
         ts.needTransform = true;
       }
     };
-    Transform6.prototype._destroy = function(err, cb) {
+    Transform7.prototype._destroy = function(err, cb) {
       var _this2 = this;
       Duplex.prototype._destroy.call(this, err, function(err2) {
         cb(err2);
@@ -1964,13 +1964,13 @@ var require_stream_passthrough = __commonJS({
   "node_modules/lazystream/node_modules/readable-stream/lib/_stream_passthrough.js"(exports2, module2) {
     "use strict";
     module2.exports = PassThrough4;
-    var Transform6 = require_stream_transform();
+    var Transform7 = require_stream_transform();
     var util3 = Object.create(require_util());
     util3.inherits = require_inherits();
-    util3.inherits(PassThrough4, Transform6);
+    util3.inherits(PassThrough4, Transform7);
     function PassThrough4(options) {
       if (!(this instanceof PassThrough4)) return new PassThrough4(options);
-      Transform6.call(this, options);
+      Transform7.call(this, options);
     }
     PassThrough4.prototype._transform = function(chunk, encoding, cb) {
       cb(null, chunk);
@@ -8982,15 +8982,15 @@ var require_transform = __commonJS({
   "node_modules/readable-stream/lib/internal/streams/transform.js"(exports2, module2) {
     "use strict";
     var { ObjectSetPrototypeOf, Symbol: Symbol2 } = require_primordials();
-    module2.exports = Transform6;
+    module2.exports = Transform7;
     var { ERR_METHOD_NOT_IMPLEMENTED } = require_errors().codes;
     var Duplex = require_duplex();
     var { getHighWaterMark } = require_state();
-    ObjectSetPrototypeOf(Transform6.prototype, Duplex.prototype);
-    ObjectSetPrototypeOf(Transform6, Duplex);
+    ObjectSetPrototypeOf(Transform7.prototype, Duplex.prototype);
+    ObjectSetPrototypeOf(Transform7, Duplex);
     var kCallback = Symbol2("kCallback");
-    function Transform6(options) {
-      if (!(this instanceof Transform6)) return new Transform6(options);
+    function Transform7(options) {
+      if (!(this instanceof Transform7)) return new Transform7(options);
       const readableHighWaterMark = options ? getHighWaterMark(this, options, "readableHighWaterMark", true) : null;
       if (readableHighWaterMark === 0) {
         options = {
@@ -9044,11 +9044,11 @@ var require_transform = __commonJS({
         final.call(this);
       }
     }
-    Transform6.prototype._final = final;
-    Transform6.prototype._transform = function(chunk, encoding, callback) {
+    Transform7.prototype._final = final;
+    Transform7.prototype._transform = function(chunk, encoding, callback) {
       throw new ERR_METHOD_NOT_IMPLEMENTED("_transform()");
     };
-    Transform6.prototype._write = function(chunk, encoding, callback) {
+    Transform7.prototype._write = function(chunk, encoding, callback) {
       const rState = this._readableState;
       const wState = this._writableState;
       const length = rState.length;
@@ -9069,7 +9069,7 @@ var require_transform = __commonJS({
         }
       });
     };
-    Transform6.prototype._read = function() {
+    Transform7.prototype._read = function() {
       if (this[kCallback]) {
         const callback = this[kCallback];
         this[kCallback] = null;
@@ -9085,12 +9085,12 @@ var require_passthrough2 = __commonJS({
     "use strict";
     var { ObjectSetPrototypeOf } = require_primordials();
     module2.exports = PassThrough4;
-    var Transform6 = require_transform();
-    ObjectSetPrototypeOf(PassThrough4.prototype, Transform6.prototype);
-    ObjectSetPrototypeOf(PassThrough4, Transform6);
+    var Transform7 = require_transform();
+    ObjectSetPrototypeOf(PassThrough4.prototype, Transform7.prototype);
+    ObjectSetPrototypeOf(PassThrough4, Transform7);
     function PassThrough4(options) {
       if (!(this instanceof PassThrough4)) return new PassThrough4(options);
-      Transform6.call(this, options);
+      Transform7.call(this, options);
     }
     PassThrough4.prototype._transform = function(chunk, encoding, cb) {
       cb(null, chunk);
@@ -11848,7 +11848,7 @@ var require_streamx = __commonJS({
         return this;
       }
     };
-    var Transform6 = class extends Duplex {
+    var Transform7 = class extends Duplex {
       constructor(opts) {
         super(opts);
         this._transformState = new TransformState(this);
@@ -11892,7 +11892,7 @@ var require_streamx = __commonJS({
         this._flush(transformAfterFlush.bind(this));
       }
     };
-    var PassThrough4 = class extends Transform6 {
+    var PassThrough4 = class extends Transform7 {
     };
     function transformAfterFlush(err, data) {
       const cb = this._transformState.afterFinal;
@@ -12021,7 +12021,7 @@ var require_streamx = __commonJS({
       Writable,
       Readable: Readable3,
       Duplex,
-      Transform: Transform6,
+      Transform: Transform7,
       // Export PassThrough for compatibility with Node.js core's stream module
       PassThrough: PassThrough4
     };
@@ -12637,7 +12637,7 @@ var require_extract = __commonJS({
 // node_modules/tar-stream/constants.js
 var require_constants = __commonJS({
   "node_modules/tar-stream/constants.js"(exports2, module2) {
-    var constants = {
+    var constants2 = {
       // just for envs without fs
       S_IFMT: 61440,
       S_IFDIR: 16384,
@@ -12647,9 +12647,9 @@ var require_constants = __commonJS({
       S_IFLNK: 40960
     };
     try {
-      module2.exports = require("fs").constants || constants;
+      module2.exports = require("fs").constants || constants2;
     } catch {
-      module2.exports = constants;
+      module2.exports = constants2;
     }
   }
 });
@@ -12659,7 +12659,7 @@ var require_pack = __commonJS({
   "node_modules/tar-stream/pack.js"(exports2, module2) {
     var { Readable: Readable3, Writable, getStreamError } = require_streamx();
     var b4a = require_b4a();
-    var constants = require_constants();
+    var constants2 = require_constants();
     var headers = require_headers();
     var DMODE = 493;
     var FMODE = 420;
@@ -12862,16 +12862,16 @@ var require_pack = __commonJS({
       return new Pack(opts);
     };
     function modeToType(mode) {
-      switch (mode & constants.S_IFMT) {
-        case constants.S_IFBLK:
+      switch (mode & constants2.S_IFMT) {
+        case constants2.S_IFBLK:
           return "block-device";
-        case constants.S_IFCHR:
+        case constants2.S_IFCHR:
           return "character-device";
-        case constants.S_IFDIR:
+        case constants2.S_IFDIR:
           return "directory";
-        case constants.S_IFIFO:
+        case constants2.S_IFIFO:
           return "fifo";
-        case constants.S_IFLNK:
+        case constants2.S_IFLNK:
           return "symlink";
       }
       return "file";
@@ -12898,9 +12898,6 @@ var require_tar_stream = __commonJS({
 
 // src/cli.ts
 var import_node_path4 = __toESM(require("node:path"), 1);
-
-// src/backup.ts
-var import_node_stream = require("node:stream");
 
 // src/connection-string.ts
 var KEY_ALIASES = {
@@ -13014,6 +13011,7 @@ var import_node_child_process = require("node:child_process");
 var import_node_events = require("node:events");
 var import_node_fs = require("node:fs");
 var import_promises = require("node:fs/promises");
+var import_node_os = require("node:os");
 var import_node_path = __toESM(require("node:path"), 1);
 var MYSQLDUMP_BASE_ARGS = [
   "--single-transaction",
@@ -13143,6 +13141,7 @@ function runDump(target, options) {
       env: { ...process.env, MYSQL_PWD: target.password }
     }
   );
+  child.once("spawn", () => yieldCpuToServer(child.pid));
   let stderr = "";
   child.stderr.on("data", (chunk) => {
     stderr += String(chunk);
@@ -13180,6 +13179,13 @@ function remember(key, command, version, source) {
 async function makeExecutable(target) {
   if (process.platform !== "linux") return;
   await (0, import_promises.chmod)(target, 493).catch(() => void 0);
+}
+function yieldCpuToServer(pid) {
+  if (pid === void 0) return;
+  try {
+    (0, import_node_os.setPriority)(pid, import_node_os.constants.priority.PRIORITY_BELOW_NORMAL);
+  } catch {
+  }
 }
 function spawnChecked(command, args, options) {
   try {
@@ -13232,6 +13238,35 @@ function listDir(dir) {
 // src/log.ts
 function errorMessage(value) {
   return value instanceof Error ? value.message : String(value);
+}
+
+// src/throttle.ts
+var import_node_stream = require("node:stream");
+var BURST_ALLOWANCE_MS = 100;
+function createThrottle(bytesPerSecond) {
+  if (bytesPerSecond <= 0) return new import_node_stream.PassThrough();
+  const bytesPerMs = bytesPerSecond / 1e3;
+  let allowedAt = 0;
+  let pending = null;
+  return new import_node_stream.Transform({
+    transform(chunk, _encoding, callback) {
+      const now = Date.now();
+      allowedAt = Math.max(allowedAt, now - BURST_ALLOWANCE_MS) + chunk.length / bytesPerMs;
+      const wait = allowedAt - now;
+      if (wait < 1) {
+        callback(null, chunk);
+        return;
+      }
+      pending = setTimeout(() => {
+        pending = null;
+        callback(null, chunk);
+      }, wait);
+    },
+    destroy(failure, callback) {
+      if (pending !== null) clearTimeout(pending);
+      callback(failure);
+    }
+  });
 }
 
 // src/backup.ts
@@ -13304,13 +13339,13 @@ async function runBackup(input) {
       active = { kill: dump.kill, abort: sink.abort };
       try {
         if (cancelled !== null) throw cancelled;
-        const counted = new import_node_stream.PassThrough();
+        const paced = createThrottle(input.config.maxMbPerSecond * 1024 * 1024);
         dump.stdout.on("data", (chunk) => {
           bytesSql += chunk.length;
           report();
         });
-        dump.stdout.pipe(counted);
-        sink.append(counted);
+        dump.stdout.pipe(paced);
+        sink.append(paced);
         const { warnings } = await Promise.race([dump.done, sink.failed]);
         phase = "upload";
         report();
@@ -13360,6 +13395,7 @@ var MIN_POLL_SECONDS = 60;
 var DEFAULT_POLL_SECONDS = 300;
 var DEFAULT_INTERVAL_HOURS = 1;
 var DEFAULT_LOCAL_KEEP = 7;
+var DEFAULT_MAX_MB_PER_SECOND = 10;
 function loadConfig(source, defaults2) {
   const shared = source("mysql_connection_string", "").trim();
   const override = source("qbx_db_backup_connection_string", "").trim();
@@ -13429,6 +13465,13 @@ function loadConfig(source, defaults2) {
     intervalClamped: interval !== 0 && interval < 1,
     dumpBin: source("qbx_db_backup_dump_bin", "").trim(),
     zipLevel: clamp(toInt(source("qbx_db_backup_zip_level", "6"), 6), 1, 9),
+    maxMbPerSecond: Math.max(
+      0,
+      toInt(
+        source("qbx_db_backup_max_mb_per_second", String(DEFAULT_MAX_MB_PER_SECOND)),
+        DEFAULT_MAX_MB_PER_SECOND
+      )
+    ),
     timeoutMinutes: Math.max(1, toInt(source("qbx_db_backup_timeout_minutes", "120"), 120)),
     mode,
     s3
@@ -13569,6 +13612,7 @@ var MAX_PARTS = 1e4;
 var PART_ATTEMPTS = 3;
 var MAX_RESPONSE_BYTES = 16 * MIB;
 var BODY_SLICE_BYTES = 64 * 1024;
+var HASH_SLICE_BYTES = MIB;
 var S3Client = class {
   bucket;
   region;
@@ -13725,12 +13769,12 @@ var S3Client = class {
   async abortMultipartUpload(key, uploadId) {
     await this.send("DELETE", key, { uploadId });
   }
-  send(method, key, query, body, headers = {}) {
+  async send(method, key, query, body, headers = {}) {
     const signed = signS3Request({
       method,
       url: this.buildUrl(key, query),
       headers: body ? { ...headers, "content-length": String(body.length) } : headers,
-      payloadHash: sha256Hex(body ?? ""),
+      payloadHash: body ? await hashInSlices(body) : sha256Hex(""),
       accessKeyId: this.accessKeyId,
       secretAccessKey: this.secretAccessKey,
       region: this.region
@@ -13845,6 +13889,14 @@ var S3Client = class {
     });
   }
 };
+async function hashInSlices(buffer) {
+  const hash = (0, import_node_crypto2.createHash)("sha256");
+  for (let offset = 0; offset < buffer.length; offset += HASH_SLICE_BYTES) {
+    if (offset > 0) await new Promise((resolve2) => setImmediate(resolve2));
+    hash.update(buffer.subarray(offset, offset + HASH_SLICE_BYTES));
+  }
+  return hash.digest("hex");
+}
 function* sliceBuffer(buffer) {
   for (let offset = 0; offset < buffer.length; offset += BODY_SLICE_BYTES) {
     yield buffer.subarray(offset, offset + BODY_SLICE_BYTES);
@@ -18448,6 +18500,7 @@ var FLAG_BY_CONVAR = {
   qbx_db_backup_local_dir: "out",
   qbx_db_backup_dump_bin: "dump-bin",
   qbx_db_backup_zip_level: "zip-level",
+  qbx_db_backup_max_mb_per_second: "max-mb-per-second",
   qbx_db_backup_timeout_minutes: "timeout-minutes",
   qbx_db_backup_s3_endpoint: "s3-endpoint",
   qbx_db_backup_s3_bucket: "s3-bucket",
