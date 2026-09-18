@@ -204,4 +204,49 @@ describe("S3Client", () => {
       client.putObject("file.zip", Readable.from([Buffer.from("a")]), 1, sha256Hex("a")),
     ).rejects.toThrow(/S3 Error \[AccessDenied\]: Access Denied/);
   });
+
+  it("lets an upload that keeps sending data outlast timeoutMs", async () => {
+    const client = new S3Client({
+      endpoint: `http://127.0.0.1:${mockPort}`,
+      bucket: "test-bucket",
+      accessKeyId: "TESTKEY",
+      secretAccessKey: "TESTSECRET",
+      timeoutMs: 200,
+    });
+
+    const chunkCount = 8;
+    let sent = 0;
+    const slowBody = new Readable({
+      read() {
+        if (sent >= chunkCount) {
+          this.push(null);
+          return;
+        }
+        sent += 1;
+        setTimeout(() => this.push(Buffer.alloc(16)), 60);
+      },
+    });
+
+    await client.putObject("slow.zip", slowBody, chunkCount * 16, "UNSIGNED-PAYLOAD");
+    expect(receivedRequests.length).toBe(1);
+  });
+
+  it("rejects when the server stops responding", async () => {
+    const silent = createServer(() => {});
+    await new Promise<void>((resolve) => silent.listen(0, "127.0.0.1", resolve));
+    const client = new S3Client({
+      endpoint: `http://127.0.0.1:${(silent.address() as AddressInfo).port}`,
+      bucket: "test-bucket",
+      accessKeyId: "TESTKEY",
+      secretAccessKey: "TESTSECRET",
+      timeoutMs: 100,
+    });
+
+    try {
+      await expect(client.testConnection()).rejects.toThrow(/stalled for 100ms/);
+    } finally {
+      silent.closeAllConnections();
+      await new Promise<void>((resolve) => silent.close(() => resolve()));
+    }
+  });
 });

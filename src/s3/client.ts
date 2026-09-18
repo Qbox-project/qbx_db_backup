@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import type { Readable } from "node:stream";
@@ -173,6 +174,8 @@ export class S3Client {
       headers: {
         "content-type": "application/xml",
         "content-length": String(bodyBuffer.length),
+        // AWS rejects multi-object deletes without it (MissingContentMD5).
+        "content-md5": createHash("md5").update(bodyBuffer).digest("base64"),
       },
       payloadHash,
       accessKeyId: this.accessKeyId,
@@ -202,11 +205,19 @@ export class S3Client {
     const send = target.protocol === "http:" ? httpRequest : httpsRequest;
 
     return new Promise((resolve, reject) => {
-      let aborted = false;
-      const timer = setTimeout(() => {
-        aborted = true;
-        req.destroy(new Error(`S3 request timed out after ${this.timeoutMs}ms`));
+      // Inactivity, not total duration: a large upload legitimately outlasts timeoutMs.
+      const idle = setTimeout(() => {
+        const stalled = new Error(`S3 request stalled for ${this.timeoutMs}ms`);
+        req.destroy(stalled);
+        reject(stalled);
       }, this.timeoutMs);
+      const settle =
+        <T>(finish: (value: T) => void) =>
+        (value: T) => {
+          clearTimeout(idle);
+          finish(value);
+        };
+      const fail = settle(reject);
 
       const req = send(
         target,
@@ -215,45 +226,37 @@ export class S3Client {
           headers: signed.headers,
         },
         (res) => {
-          clearTimeout(timer);
           const chunks: Buffer[] = [];
           res.on("data", (chunk: Buffer) => {
+            idle.refresh();
             if (chunks.length < 1024) chunks.push(chunk);
           });
-          res.on("error", (resErr) => {
-            clearTimeout(timer);
-            reject(resErr);
-          });
+          res.on("error", fail);
           res.on("end", () => {
-            clearTimeout(timer);
             const statusCode = res.statusCode ?? 0;
             const resBody = Buffer.concat(chunks).toString("utf8");
 
             if (statusCode >= 200 && statusCode < 300) {
-              resolve({ statusCode, headers: res.headers, body: resBody });
+              settle(resolve)({ statusCode, headers: res.headers, body: resBody });
               return;
             }
 
-            const parsedError = parseS3ErrorXml(resBody, statusCode);
-            reject(parsedError);
+            fail(parseS3ErrorXml(resBody, statusCode));
           });
         },
       );
 
-      req.on("error", (reqErr) => {
-        clearTimeout(timer);
-        if (!aborted) reject(reqErr);
-      });
+      req.on("error", fail);
 
       if (body) {
         if (Buffer.isBuffer(body)) {
           req.end(body);
         } else {
           body.on("error", (streamErr) => {
-            clearTimeout(timer);
             req.destroy(streamErr);
-            reject(streamErr);
+            fail(streamErr);
           });
+          body.on("data", () => idle.refresh());
           body.pipe(req);
         }
       } else {
