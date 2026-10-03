@@ -6,6 +6,7 @@ import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Readable } from "node:stream";
+import { createSpool } from "../spool";
 import { S3Client } from "./client";
 import { S3Sink } from "./sink";
 
@@ -55,6 +56,12 @@ async function withTempDir(body: (dir: string) => Promise<void>): Promise<void> 
 
 const sql = Buffer.from("CREATE TABLE users (id INT);\n".repeat(100), "utf8");
 
+async function spoolZip(target: string, data: Buffer) {
+  const spool = createSpool(target, { entryName: "dump.sql", zipLevel: 1 });
+  spool.append(Readable.from([data]));
+  return spool.finish();
+}
+
 describe("S3Sink", () => {
   it("spools zip, uploads directly to S3 with SigV4 headers, and cleans up temp files", async () => {
     await withTempDir(async (dir) => {
@@ -73,9 +80,8 @@ describe("S3Sink", () => {
         tmpDir: dir,
       });
 
-      const open = await sink.open({ entryName: "dump.sql", zipLevel: 1 });
-      open.append(Readable.from([sql]));
-      const result = await open.finish();
+      const open = await sink.open();
+      const result = await open.finish(await spoolZip(open.spoolPath, sql));
 
       expect(result.bytesZip).toBeGreaterThan(0);
       expect(result.location).toBe("s3://backups-bucket/qbox-2026-09-10.zip");
@@ -114,9 +120,8 @@ describe("S3Sink", () => {
         keepLocalPath: localCopyPath,
       });
 
-      const open = await sink.open({ entryName: "dump.sql", zipLevel: 1 });
-      open.append(Readable.from([sql]));
-      const result = await open.finish();
+      const open = await sink.open();
+      const result = await open.finish(await spoolZip(open.spoolPath, sql));
 
       expect(result.location).toContain("s3://backups-bucket/qbox-dual.zip");
       expect(result.location).toContain("local:");
@@ -144,8 +149,8 @@ describe("S3Sink", () => {
         tmpDir: dir,
       });
 
-      const open = await sink.open({ entryName: "dump.sql", zipLevel: 1 });
-      open.append(Readable.from([sql]));
+      const open = await sink.open();
+      await spoolZip(open.spoolPath, sql);
       await open.abort();
 
       expect(received).toHaveLength(0);

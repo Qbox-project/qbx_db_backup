@@ -12,7 +12,7 @@
   "bugs": "https://github.com/Qbox-project/qbx_db_backup/issues",
   "homepage": "https://github.com/Qbox-project/qbx_db_backup",
   "scripts": {
-    "build": "esbuild src/server.ts --bundle --platform=node --target=node22 --format=cjs --outfile=dist/server.js && esbuild src/cli.ts --bundle --platform=node --target=node22 --format=cjs --outfile=dist/cli.js && node -e \"require('fs').writeFileSync('dist/package.json', JSON.stringify({type:'commonjs'}))\"",
+    "build": "esbuild src/server.ts --bundle --platform=node --target=node22 --format=cjs --outfile=dist/server.js && esbuild src/cli.ts --bundle --platform=node --target=node22 --format=cjs --outfile=dist/cli.js && esbuild src/spool-child.ts --bundle --platform=node --target=node22 --format=cjs --outfile=dist/spool.js && node -e \"require('fs').writeFileSync('dist/package.json', JSON.stringify({type:'commonjs'}))\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "bun test",
     "lint": "biome check .",
