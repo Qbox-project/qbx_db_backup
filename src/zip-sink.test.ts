@@ -6,6 +6,7 @@ import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Readable } from "node:stream";
+import { createSpool } from "./spool";
 import { type UploadInfo, UploadSink } from "./zip-sink";
 
 type ReceivedPut = {
@@ -52,6 +53,12 @@ async function withTempDir(body: (dir: string) => Promise<void>): Promise<void> 
 
 const sql = Buffer.from("INSERT INTO players VALUES (1);\n".repeat(500), "utf8");
 
+async function spoolZip(target: string, data: Buffer) {
+  const spool = createSpool(target, { entryName: "dump.sql", zipLevel: 1 });
+  spool.append(Readable.from([data]));
+  return spool.finish();
+}
+
 describe("UploadSink", () => {
   it("resolves the upload with the spooled size and digest, then PUTs it", async () => {
     await withTempDir(async (dir) => {
@@ -64,9 +71,8 @@ describe("UploadSink", () => {
         },
       });
 
-      const open = await sink.open({ entryName: "dump.sql", zipLevel: 1 });
-      open.append(Readable.from([sql]));
-      const result = await open.finish();
+      const open = await sink.open();
+      const result = await open.finish(await spoolZip(open.spoolPath, sql));
 
       expect(resolved).toHaveLength(1);
       const info = resolved[0]!;
@@ -95,10 +101,10 @@ describe("UploadSink", () => {
         },
       });
 
-      const open = await sink.open({ entryName: "dump.sql", zipLevel: 1 });
-      open.append(Readable.from([sql]));
+      const open = await sink.open();
+      const spooled = await spoolZip(open.spoolPath, sql);
 
-      await expect(open.finish()).rejects.toThrow(/larger than the storage pool/);
+      await expect(open.finish(spooled)).rejects.toThrow(/larger than the storage pool/);
       expect(received).toHaveLength(0);
       expect(await readdir(dir)).toEqual([]);
     });

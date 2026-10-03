@@ -1,8 +1,9 @@
+import path from "node:path";
 import type { Config } from "./config";
 import { parseConnectionString } from "./connection-string";
-import { type AttemptState, type DumpBinary, detectDumpBinary, planRetry, runDump } from "./dump";
+import { type AttemptState, type DumpBinary, detectDumpBinary, planRetry } from "./dump";
 import { errorMessage } from "./log";
-import { createThrottle } from "./throttle";
+import { forkSpool } from "./spool-process";
 import type { BackupSink } from "./zip-sink";
 
 export type BackupPhase = "dump" | "upload";
@@ -82,12 +83,15 @@ export async function runBackup(input: RunBackupInput): Promise<BackupOutcome> {
 
   const startedAt = Date.now();
   let cancelled: Error | null = null;
-  let active: { kill: () => void; abort: () => Promise<void> } | null = null;
+  let active: { stop: () => Promise<void>; abort: () => Promise<void> } | null = null;
 
   const cancel = (reason: Error) => {
     cancelled ??= reason;
-    active?.kill();
-    void active?.abort().catch(() => {});
+    const current = active;
+    void current
+      ?.stop()
+      .then(current.abort)
+      .catch(() => {});
   };
   cancelActive = cancel;
 
@@ -119,46 +123,49 @@ export async function runBackup(input: RunBackupInput): Promise<BackupOutcome> {
       let phase: BackupPhase = "dump";
       const report = () => input.onProgress?.({ phase, bytesSql, bytesZip });
 
-      const sink = await input.sink.open({
-        entryName,
-        zipLevel: input.config.zipLevel,
-        onZipBytes: (total) => {
-          bytesZip = total;
+      const sink = await input.sink.open();
+      const spool = forkSpool(
+        path.join(input.config.resourceDir, "dist", "spool.js"),
+        {
+          target,
+          binary,
+          attempt: state,
+          path: sink.spoolPath,
+          entryName,
+          zipLevel: input.config.zipLevel,
+          maxMbPerSecond: input.config.maxMbPerSecond,
+        },
+        (progress) => {
+          bytesSql = progress.bytesSql;
+          bytesZip = progress.bytesZip;
           report();
         },
-      });
-      const dump = runDump(target, { binary, ...state });
-      active = { kill: dump.kill, abort: sink.abort };
+      );
+      active = { stop: spool.stop, abort: sink.abort };
 
       try {
         if (cancelled !== null) throw cancelled;
-        const paced = createThrottle(input.config.maxMbPerSecond * 1024 * 1024);
-        dump.stdout.on("data", (chunk: Buffer) => {
-          bytesSql += chunk.length;
-          report();
-        });
-        dump.stdout.pipe(paced);
-        sink.append(paced);
-
-        const { warnings } = await Promise.race([dump.done, sink.failed]);
+        const spooled = await spool.done;
+        bytesSql = spooled.bytesSql;
+        bytesZip = spooled.bytesZip;
         phase = "upload";
         report();
-        const written = await sink.finish().catch((failure: unknown) => {
+        const written = await sink.finish(spooled).catch((failure: unknown) => {
           throw new DestinationError(failure);
         });
         return {
           busy: false,
           sizeBytes: written.bytesZip,
-          rawBytes: bytesSql,
+          rawBytes: spooled.bytesSql,
           sha256: written.sha256,
           durationMs: Date.now() - startedAt,
-          warnings,
+          warnings: spooled.warnings,
           database: target.database,
           dumpBinary: binary,
           ...(written.location === undefined ? {} : { location: written.location }),
         };
       } catch (failure) {
-        dump.kill();
+        await spool.stop();
         await sink.abort().catch(() => {});
         if (cancelled !== null) throw cancelled;
         const plan = planRetry(errorMessage(failure), state, attempt);
